@@ -5,15 +5,17 @@
     {
       "mode": "light",
       "pair": "ink/canvas",
-      "ratio": 18.455,
+      "ratio": 13.067,
       "need": 4.5,
+      "headroom": 8.567,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "ink-muted/surface",
-      "ratio": 7.746,
+      "ratio": 7.037,
       "need": 4.5,
+      "headroom": 2.537,
       "pass": true
     },
     {
@@ -21,6 +23,7 @@
       "pair": "brand/canvas",
       "ratio": 4.876,
       "need": 4.5,
+      "headroom": 0.376,
       "pass": true
     },
     {
@@ -28,41 +31,47 @@
       "pair": "brand-solid-ink/brand-solid",
       "ratio": 4.876,
       "need": 4.5,
+      "headroom": 0.376,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "success/canvas",
-      "ratio": 4.867,
+      "ratio": 4.878,
       "need": 3,
+      "headroom": 1.878,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "warn/canvas",
-      "ratio": 4.711,
+      "ratio": 5.276,
       "need": 3,
+      "headroom": 2.276,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "danger/canvas",
-      "ratio": 5.621,
+      "ratio": 5.639,
       "need": 4.5,
+      "headroom": 1.139,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink/canvas",
-      "ratio": 18.455,
+      "ratio": 13.067,
       "need": 4.5,
+      "headroom": 8.567,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink-muted/surface",
-      "ratio": 7.746,
+      "ratio": 7.037,
       "need": 4.5,
+      "headroom": 2.537,
       "pass": true
     },
     {
@@ -70,6 +79,7 @@
       "pair": "brand/canvas",
       "ratio": 4.876,
       "need": 4.5,
+      "headroom": 0.376,
       "pass": true
     },
     {
@@ -77,13 +87,15 @@
       "pair": "brand-solid-ink/brand-solid",
       "ratio": 4.876,
       "need": 4.5,
+      "headroom": 0.376,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "danger/canvas",
-      "ratio": 5.621,
+      "ratio": 5.639,
       "need": 4.5,
+      "headroom": 1.139,
       "pass": true
     }
   ]

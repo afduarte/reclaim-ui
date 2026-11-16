@@ -2,42 +2,72 @@
   "name": "base",
   "inherits": null,
   "fonts": {
-    "display": "Newsreader",
-    "text": "Public Sans",
-    "mono": "JetBrains Mono"
+    "display": "Geist",
+    "text": "Albert Sans",
+    "mono": "Inconsolata"
   },
   "color": {
     "neutral": {
-      "hue": 326,
-      "chroma": 0.018
+      "hue": 290,
+      "chroma": 0.01
     },
+    "canvas": null,
     "accents": {
       "brand": {
-        "hue": 315,
-        "chroma": 0.158
+        "hue": 290,
+        "chroma": 0.186
       },
       "success": {
-        "hue": 157,
-        "chroma": 0.13
+        "hue": 143,
+        "chroma": 0.149
       },
       "warn": {
-        "hue": 178,
-        "chroma": 0.15
+        "hue": 73,
+        "chroma": 0.167
       },
       "danger": {
-        "hue": 25,
-        "chroma": 0.18
+        "hue": 13,
+        "chroma": 0.177
       }
     }
   },
-  "scale": {
-    "radius": 1,
-    "density": 0.85,
-    "shadow": 0.1
+  "ramps": {
+    "contrast": 1
+  },
+  "mapping": {
+    "surfaceLift": 2,
+    "borderStep": 4,
+    "inkStep": 900,
+    "solidStep": 700,
+    "ringAlpha": 0.55
   },
   "type": {
-    "base": 15,
-    "ratio": 1.167,
-    "trackingHeading": -0.015
+    "base": 16,
+    "ratio": 1.1,
+    "trackingHeading": -0.04,
+    "lineHeightBody": 1.35,
+    "lineHeightHeading": 1.1,
+    "weightHeading": 700,
+    "weightUI": 550,
+    "smallScale": 0.95
+  },
+  "scale": {
+    "radius": 3,
+    "density": 0.92,
+    "shadow": 0.75,
+    "controlH": 35,
+    "spaceUnit": 4,
+    "radiusSpread": 1.5,
+    "shadowHue": 300,
+    "shadowChroma": 0,
+    "motion": 1
+  },
+  "dark": {
+    "canvasLift": 0
+  },
+  "components": {
+    "tableCase": "uppercase",
+    "badgePill": false,
+    "cardBorder": true
   }
 }

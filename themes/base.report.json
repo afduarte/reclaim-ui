@@ -5,85 +5,97 @@
     {
       "mode": "light",
       "pair": "ink/canvas",
-      "ratio": 18.447,
+      "ratio": 13.07,
       "need": 4.5,
+      "headroom": 8.57,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "ink-muted/surface",
-      "ratio": 7.768,
+      "ratio": 7.038,
       "need": 4.5,
+      "headroom": 2.538,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand/canvas",
-      "ratio": 5.548,
+      "ratio": 5.534,
       "need": 4.5,
+      "headroom": 1.034,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.548,
+      "ratio": 5.534,
       "need": 4.5,
+      "headroom": 1.034,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "success/canvas",
-      "ratio": 4.86,
+      "ratio": 4.877,
       "need": 3,
+      "headroom": 1.877,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "warn/canvas",
-      "ratio": 4.704,
+      "ratio": 5.275,
       "need": 3,
+      "headroom": 2.275,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "danger/canvas",
-      "ratio": 5.613,
+      "ratio": 5.638,
       "need": 4.5,
+      "headroom": 1.138,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink/canvas",
-      "ratio": 18.447,
+      "ratio": 13.07,
       "need": 4.5,
+      "headroom": 8.57,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink-muted/surface",
-      "ratio": 7.768,
+      "ratio": 7.038,
       "need": 4.5,
+      "headroom": 2.538,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand/canvas",
-      "ratio": 5.548,
+      "ratio": 5.534,
       "need": 4.5,
+      "headroom": 1.034,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.548,
+      "ratio": 5.534,
       "need": 4.5,
+      "headroom": 1.034,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "danger/canvas",
-      "ratio": 5.613,
+      "ratio": 5.638,
       "need": 4.5,
+      "headroom": 1.138,
       "pass": true
     }
   ]
