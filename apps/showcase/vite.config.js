@@ -2,14 +2,24 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runGenerate } from "@reclaim/tokens/generate.mjs";
 import { sparsePatch } from "@reclaim/tokens";
 import { readThemeWithInheritance } from "@reclaim/tokens/files.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const themesDir = path.resolve(here, "../../themes");
+const genCli = path.resolve(here, "../../packages/tokens/cli.mjs");
+
+/**
+ * Regenerate in a FRESH node process. The dev server's own module cache would
+ * otherwise keep serving a stale copy of the compiler after engine edits —
+ * silent data corruption on every save. ~100ms per save, worth it.
+ */
+function regenerate() {
+  execFileSync(process.execPath, [genCli], { stdio: "pipe" });
+}
 
 /**
  * Write-through API: POST /api/themes/:name { tokens } -> themes/<name>.tokens.json
@@ -70,9 +80,10 @@ function themeWriter() {
               }
             }
             writeFileSync(file, JSON.stringify(out, null, 2) + "\n");
-            const results = runGenerate(themesDir);
+            regenerate();
+            const report = JSON.parse(readFileSync(path.join(themesDir, `${name}.report.json`), "utf8"));
             res.setHeader("content-type", "application/json");
-            res.end(JSON.stringify({ ok: true, report: results.find((r) => r.theme === name) }));
+            res.end(JSON.stringify({ ok: true, report: { theme: name, fails: report.rows.filter((r) => !r.pass) } }));
           } catch (e) {
             res.statusCode = 400;
             res.end(JSON.stringify({ ok: false, error: String(e?.message ?? e) }));
