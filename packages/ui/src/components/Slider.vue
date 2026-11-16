@@ -1,39 +1,48 @@
 <script setup>
-import { computed } from "vue";
-
 const props = defineProps({
   modelValue: { type: [Number, String], default: 0 },
   min: { type: [Number, String], default: 0 },
   max: { type: [Number, String], default: 100 },
   step: { type: [Number, String], default: 1 },
   label: { type: String, default: null },
-  // how to render the numeric readout: prefix/suffix strings, or override entirely
-  valueText: { type: String, default: null },
   suffix: { type: String, default: "" },
-  decimals: { type: Number, default: null },
   dirty: { type: Boolean, default: false }, // differs from session baseline
 });
 const emit = defineEmits(["update:modelValue", "commit", "revert"]);
 
-const display = computed(() => {
-  if (props.valueText != null) return props.valueText;
-  const n = Number(props.modelValue);
-  const shown = props.decimals != null ? n.toFixed(props.decimals) : String(Math.round(n * 1000) / 1000);
-  return `${shown}${props.suffix}`;
-});
+const set = (raw) => {
+  const n = parseFloat(raw);
+  if (Number.isFinite(n)) emit("update:modelValue", n);
+};
 </script>
 
 <template>
-  <label class="rc-slider" :class="{ 'rc-slider--dirty': dirty }">
-    <span v-if="label" class="rc-slider__label">{{ label }}<b class="rc-slider__value">{{ display }}</b></span>
+  <div class="rc-slider" :class="{ 'rc-slider--dirty': dirty }">
+    <span class="rc-slider__label">
+      {{ label }}
+      <span class="rc-slider__valuebox">
+        <input
+          class="rc-slider__num"
+          type="number"
+          :min="min"
+          :max="max"
+          :step="step"
+          :value="Number(props.modelValue)"
+          @input="set($event.target.value)"
+          @change="emit('commit')"
+        />
+        <span v-if="suffix" class="rc-slider__suffix">{{ suffix }}</span>
+      </span>
+    </span>
     <input
       type="range"
       class="rc-range"
+      :aria-label="label"
       :min="min"
       :max="max"
       :step="step"
       :value="Number(props.modelValue)"
-      @input="emit('update:modelValue', parseFloat($event.target.value))"
+      @input="set($event.target.value)"
       @change="emit('commit')"
     />
     <button
@@ -41,7 +50,7 @@ const display = computed(() => {
       class="rc-revert"
       type="button"
       title="Revert to session baseline"
-      @click.prevent.stop="emit('revert')"
+      @click.prevent="emit('revert')"
     >↺</button>
-  </label>
+  </div>
 </template>

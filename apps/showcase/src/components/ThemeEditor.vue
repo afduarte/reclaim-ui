@@ -200,9 +200,9 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           </div>
         </div>
         <div class="space-y-1">
-          <Slider label="size" suffix="px" :decimals="1" v-model="t.type.base" :min="14" :max="19" :step="0.5"
+          <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5"
             :dirty="isD('type.base')" @revert="revert('type.base')" />
-          <Slider label="ratio" :decimals="3" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001"
+          <Slider label="ratio" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001"
             :dirty="isD('type.ratio')" @revert="revert('type.ratio')" />
         </div>
       </section>
@@ -218,7 +218,7 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         </div>
         <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360"
           :dirty="isD('color.neutral.hue')" @revert="revert('color.neutral.hue')" />
-        <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
+        <Slider label="chroma" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
           :dirty="isD('color.neutral.chroma')" @revert="revert('color.neutral.chroma')" />
       </section>
 
@@ -236,7 +236,7 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           <div class="space-y-1">
             <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360"
               :dirty="isD(`color.accents.${k}.hue`)" @revert="revert(`color.accents.${k}.hue`)" />
-            <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005"
+            <Slider label="chroma" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005"
               :dirty="isD(`color.accents.${k}.chroma`)" @revert="revert(`color.accents.${k}.chroma`)" />
           </div>
         </div>
@@ -247,9 +247,9 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Geometry</h4>
         <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24"
           :dirty="isD('scale.radius')" @revert="revert('scale.radius')" />
-        <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01"
+        <Slider label="density" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01"
           :dirty="isD('scale.density')" @revert="revert('scale.density')" />
-        <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05"
+        <Slider label="shadow" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05"
           :dirty="isD('scale.shadow')" @revert="revert('scale.shadow')" />
       </section>
 
