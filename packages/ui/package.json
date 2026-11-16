@@ -1,0 +1,19 @@
+{
+  "name": "@reclaim/ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Reclaim design system components (Vue 3 + Reka-ready, styled purely with --rc-* semantic tokens)",
+  "exports": {
+    ".": "./src/index.js",
+    "./styles/tailwind.css": "./src/styles/tailwind.css",
+    "./cn": "./src/cn.js"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "reclaim-ui",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "gen": "node packages/tokens/cli.mjs",
+    "dev": "npm run gen && npm run dev -w @reclaim/showcase",
+    "build": "npm run gen && npm run build -w @reclaim/showcase && npm run build -w @reclaim/registry",
+    "registry:build": "npm run gen && node packages/registry/build.mjs"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

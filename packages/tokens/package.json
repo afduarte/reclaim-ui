@@ -1,0 +1,19 @@
+{
+  "name": "@reclaim/tokens",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Reclaim theme compiler: tokens JSON -> runtime CSS vars + WCAG contrast reports",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./files.mjs": "./files.mjs",
+    "./generate.mjs": "./generate.mjs"
+  },
+  "bin": {
+    "reclaim-gen": "./cli.mjs"
+  },
+  "dependencies": {
+    "culori": "^4.0.2"
+  }
+}

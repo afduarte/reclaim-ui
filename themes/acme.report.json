@@ -1,0 +1,90 @@
+{
+  "generatedFrom": "acme.tokens.json",
+  "theme": "acme",
+  "rows": [
+    {
+      "mode": "light",
+      "pair": "ink/canvas",
+      "ratio": 18.457,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "ink-muted/surface",
+      "ratio": 7.736,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "brand/canvas",
+      "ratio": 5.173,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "brand-solid-ink/brand-solid",
+      "ratio": 5.173,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "success/canvas",
+      "ratio": 4.875,
+      "need": 3,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "warn/canvas",
+      "ratio": 5.2,
+      "need": 3,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "danger/canvas",
+      "ratio": 5.625,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "ink/canvas",
+      "ratio": 18.457,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "ink-muted/surface",
+      "ratio": 7.736,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "brand/canvas",
+      "ratio": 5.173,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "brand-solid-ink/brand-solid",
+      "ratio": 5.173,
+      "need": 4.5,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "danger/canvas",
+      "ratio": 5.625,
+      "need": 4.5,
+      "pass": true
+    }
+  ]
+}

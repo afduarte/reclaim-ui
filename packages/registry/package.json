@@ -1,0 +1,13 @@
+{
+  "name": "@reclaim/registry",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Shadcn-compatible registry build: themes as registry:base + components as copy-in items",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@reclaim/tokens": "*"
+  }
+}

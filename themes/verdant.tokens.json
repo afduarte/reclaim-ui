@@ -1,0 +1,16 @@
+{
+  "name": "verdant",
+  "inherits": "base",
+  "fonts": {
+    "display": "Fraunces",
+    "text": "Figtree"
+  },
+  "color": {
+    "neutral": { "hue": 75, "chroma": 0.016 },
+    "accents": {
+      "brand": { "hue": 158, "chroma": 0.125 }
+    }
+  },
+  "scale": { "radius": 14, "density": 1.06, "shadow": 0.8 },
+  "type": { "ratio": 1.28, "trackingHeading": -0.02 }
+}

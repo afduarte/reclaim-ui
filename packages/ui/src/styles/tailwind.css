@@ -1,0 +1,227 @@
+/* @reclaim/ui — Tailwind v4 bridge + component layer.
+   Components may only reference --rc-* semantic vars (defined by themes/*.rc.css).
+   This file is theme-agnostic: swapping the generated theme file restyles everything. */
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--rc-font-display);
+  --font-sans: var(--rc-font-text);
+  --font-mono: var(--rc-font-mono);
+
+  --color-canvas: var(--rc-canvas);
+  --color-surface: var(--rc-surface);
+  --color-surface-2: var(--rc-surface-2);
+  --color-line: var(--rc-line);
+  --color-line-strong: var(--rc-line-strong);
+  --color-ink: var(--rc-ink);
+  --color-ink-muted: var(--rc-ink-muted);
+  --color-ink-faint: var(--rc-ink-faint);
+  --color-brand: var(--rc-brand);
+  --color-success: var(--rc-success);
+  --color-warn: var(--rc-warn);
+  --color-danger: var(--rc-danger);
+
+  --radius-rc-sm: var(--rc-radius-sm);
+  --radius-rc: var(--rc-radius);
+  --radius-rc-lg: var(--rc-radius-lg);
+  --radius-rc-xl: var(--rc-radius-xl);
+
+  --text-xs: var(--rc-text-xs);
+  --text-sm: var(--rc-text-sm);
+  --text-base: var(--rc-text-base);
+  --text-lg: var(--rc-text-lg);
+  --text-xl: var(--rc-text-xl);
+  --text-2xl: var(--rc-text-2xl);
+  --text-3xl: var(--rc-text-3xl);
+  --text-4xl: var(--rc-text-4xl);
+  --text-lg--line-height: var(--rc-leading-heading);
+  --text-xl--line-height: var(--rc-leading-heading);
+  --text-2xl--line-height: var(--rc-leading-heading);
+  --text-3xl--line-height: var(--rc-leading-heading);
+  --text-4xl--line-height: var(--rc-leading-heading);
+
+  --shadow-rc-1: var(--rc-shadow-1);
+  --shadow-rc-2: var(--rc-shadow-2);
+  --shadow-rc-3: var(--rc-shadow-3);
+
+  --spacing: calc(0.25rem * var(--rc-density));
+}
+
+@layer base {
+  html {
+    font-family: var(--rc-font-text);
+    font-size: var(--rc-text-base);
+    line-height: var(--rc-leading-body);
+    color: var(--rc-ink);
+    background: var(--rc-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--rc-font-display);
+    letter-spacing: var(--rc-tracking-heading);
+    line-height: var(--rc-leading-heading);
+    font-weight: 600;
+  }
+  a:not([class]) {
+    color: var(--rc-link, var(--rc-brand));
+    text-underline-offset: 2px;
+  }
+  ::selection {
+    background: var(--rc-brand-soft);
+    color: var(--rc-brand-soft-ink);
+  }
+  code, kbd, pre { font-family: var(--rc-font-mono); }
+}
+
+/* ---- component layer: the shape language lives here, once ---- */
+
+.rc-btn {
+  --_bg: var(--rc-a-solid, var(--rc-brand-solid));
+  --_fg: var(--rc-a-solid-ink, var(--rc-brand-solid-ink));
+  --_bd: transparent;
+  --_bg-hover: var(--rc-a-solid-hover, var(--rc-brand-solid-hover));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--rc-space) * 2);
+  height: var(--rc-control-h);
+  padding-inline: calc(var(--rc-space) * 4);
+  border-radius: var(--rc-radius);
+  border: 1px solid var(--_bd);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: var(--rc-font-text);
+  font-size: var(--rc-text-sm);
+  font-weight: 550;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease;
+}
+.rc-btn:active { transform: translateY(1px); }
+.rc-btn:hover:not(:disabled) { background: var(--_bg-hover); }
+.rc-btn:focus-visible {
+  outline: 2px solid var(--rc-ring-soft);
+  outline-offset: 2px;
+}
+.rc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.rc-btn--sm { height: calc(var(--rc-control-h) * 0.82); padding-inline: calc(var(--rc-space) * 3); font-size: var(--rc-text-xs); }
+.rc-btn--lg { height: calc(var(--rc-control-h) * 1.18); padding-inline: calc(var(--rc-space) * 5.5); font-size: var(--rc-text-base); }
+
+.rc-btn--soft {
+  --_bg: var(--rc-a-soft, var(--rc-brand-soft));
+  --_fg: var(--rc-a-soft-ink, var(--rc-brand-soft-ink));
+  --_bg-hover: color-mix(in oklab, var(--_bg) 78%, var(--rc-ink-faint));
+}
+.rc-btn--outline {
+  --_bg: transparent;
+  --_fg: var(--rc-ink);
+  --_bd: var(--rc-line-strong);
+  --_bg-hover: var(--rc-surface-2);
+}
+.rc-btn--ghost {
+  --_bg: transparent;
+  --_fg: var(--rc-ink-muted);
+  --_bd: transparent;
+  --_bg-hover: var(--rc-surface-2);
+}
+.rc-btn--ghost:hover:not(:disabled) { --_fg: var(--rc-ink); }
+
+.rc-btn--icon {
+  width: var(--rc-control-h);
+  padding-inline: 0;
+  border-radius: var(--rc-radius);
+}
+
+.rc-input {
+  width: 100%;
+  height: var(--rc-control-h);
+  padding-inline: calc(var(--rc-space) * 3);
+  border-radius: var(--rc-radius);
+  border: 1px solid var(--rc-line);
+  background: var(--rc-canvas);
+  color: var(--rc-ink);
+  font: inherit;
+  font-size: var(--rc-text-sm);
+  transition: border-color 120ms ease, outline-color 120ms ease;
+}
+.rc-input::placeholder { color: var(--rc-ink-faint); }
+.rc-input:hover:not(:disabled) { border-color: var(--rc-line-strong); }
+.rc-input:focus-visible {
+  outline: 3px solid var(--rc-ring-soft);
+  outline-offset: -1px;
+  border-color: var(--rc-ring);
+}
+.rc-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--rc-surface); }
+.rc-input[aria-invalid="true"] { border-color: var(--rc-danger-solid); }
+.rc-input[aria-invalid="true"]:focus-visible {
+  outline-color: color-mix(in oklab, var(--rc-danger-solid) 40%, transparent);
+}
+.rc-input--mono { font-family: var(--rc-font-mono); font-size: var(--rc-text-sm); }
+
+.rc-field__label {
+  display: block;
+  font-size: var(--rc-text-sm);
+  font-weight: 550;
+  color: var(--rc-ink);
+  margin-bottom: calc(var(--rc-space) * 1.5);
+}
+.rc-field__hint { font-size: var(--rc-text-xs); color: var(--rc-ink-muted); margin-top: calc(var(--rc-space) * 1.5); }
+.rc-field__error { font-size: var(--rc-text-xs); color: var(--rc-danger); margin-top: calc(var(--rc-space) * 1.5); font-weight: 550; }
+
+.rc-card {
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-line);
+  border-radius: var(--rc-radius-lg);
+  box-shadow: var(--rc-shadow-1);
+}
+
+.rc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--rc-space) * 1.5);
+  height: calc(var(--rc-control-h) * 0.62);
+  padding-inline: calc(var(--rc-space) * 2.5);
+  border-radius: 999px;
+  font-size: var(--rc-text-xs);
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  background: var(--rc-a-soft, var(--rc-brand-soft));
+  color: var(--rc-a-soft-ink, var(--rc-brand-soft-ink));
+}
+.rc-badge--outline {
+  background: transparent;
+  border: 1px solid var(--rc-a-border, var(--rc-brand-border));
+  color: var(--rc-a, var(--rc-brand));
+}
+.rc-badge--dot::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 99px;
+  background: currentColor;
+}
+
+.rc-table { width: 100%; border-collapse: collapse; font-size: var(--rc-text-sm); }
+.rc-table th {
+  text-align: left;
+  font-weight: 550;
+  color: var(--rc-ink-muted);
+  font-size: var(--rc-text-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: calc(var(--rc-space) * 2.5) calc(var(--rc-space) * 3);
+  border-bottom: 1px solid var(--rc-line);
+}
+.rc-table td {
+  padding: calc(var(--rc-space) * 3);
+  border-bottom: 1px solid var(--rc-line);
+  color: var(--rc-ink);
+}
+.rc-table tr:last-child td { border-bottom: none; }
+.rc-table tbody tr { transition: background 100ms ease; }
+.rc-table tbody tr:hover { background: var(--rc-surface-2); }
+
+.rc-switch-native, .rc-check-native {
+  accent-color: var(--rc-brand-solid);
+  width: calc(var(--rc-control-h) * 0.5);
+  height: calc(var(--rc-control-h) * 0.5);
+}

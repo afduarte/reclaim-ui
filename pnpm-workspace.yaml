@@ -1,0 +1,4 @@
+# Kept for reference; this repo currently runs on npm workspaces (no pnpm on the box).
+packages:
+  - "packages/*"
+  - "apps/*"

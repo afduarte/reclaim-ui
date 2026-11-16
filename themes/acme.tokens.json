@@ -1,0 +1,28 @@
+{
+  "name": "acme",
+  "inherits": "base",
+  "fonts": {
+    "display": "Archivo"
+  },
+  "color": {
+    "neutral": {
+      "hue": 241,
+      "chroma": 0.008
+    },
+    "accents": {
+      "brand": {
+        "hue": 252,
+        "chroma": 0.14
+      }
+    }
+  },
+  "scale": {
+    "radius": 6,
+    "density": 0.95,
+    "shadow": 0.4
+  },
+  "type": {
+    "ratio": 1.13,
+    "trackingHeading": -0.01
+  }
+}
