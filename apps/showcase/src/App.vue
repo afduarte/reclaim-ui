@@ -15,10 +15,10 @@ onMounted(initAll);
 
 const themeOptions = computed(() => themeNames.value.map((n) => ({ value: n, label: n })));
 
-async function doFork() {
+async function doFork(draft) {
   if (!/^[a-z0-9-]{2,40}$/.test(forkName.value)) return;
   forking.value = true;
-  await forkTheme(state.theme, forkName.value);
+  await forkTheme(state.theme, forkName.value, draft);
   forking.value = false;
   forkName.value = "";
 }

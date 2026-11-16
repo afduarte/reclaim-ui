@@ -69,7 +69,6 @@ export const state = reactive({
   resolved: {},
   /** name -> contrast report rows */
   reports: {},
-  dirty: false,
   notice: "",
 });
 
@@ -181,14 +180,12 @@ export async function saveTheme(tokens) {
   }
   await refreshTheme(name);
   state.rawTokens[name] = tokens;
-  state.resolved[name] = tokens;
   state.notice = `Saved themes/${name}.tokens.json`;
-  state.dirty = false;
   return true;
 }
 
-export async function forkTheme(from, newName) {
-  const base = plain(state.resolved[from] ?? state.rawTokens[from] ?? {});
+export async function forkTheme(from, newName, draftTokens) {
+  const base = plain(draftTokens ?? state.resolved[from] ?? state.rawTokens[from] ?? {});
   const tokens = { ...base, name: newName, inherits: null };
   const ok = await saveTheme(tokens);
   if (ok) await setTheme(newName);

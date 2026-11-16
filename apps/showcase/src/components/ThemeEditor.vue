@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref, watch, computed } from "vue";
-import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
-import { DEFAULT_THEME, deepMerge, rampHex, pickColor } from "@reclaim/tokens";
+import { state, workingTheme, contrastRows, saveTheme, setTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
+import { DEFAULT_THEME, deepMerge, rampHex, pickColor, contrastReport } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
 
 const emit = defineEmits(["fork"]);
@@ -11,12 +11,13 @@ const forkName = defineModel("forkName", { type: String, default: "" });
 const CURATED_FONTS = Object.keys(FONT_LOADERS);
 const fontOptions = CURATED_FONTS.map((f) => ({ value: f, label: f }));
 
-// ---- editable mirror + session baseline ------------------------------------
-// t        = live editor state (what the preview shows)
-// baseline = the theme as it was when this session opened it. Saving does NOT
-//            move the baseline: "revert" always means "back to what it was".
+// ---- draft model ------------------------------------------------------------
+// baseline = theme as last loaded/saved (the file). t = local draft.
+// Dragging edits the draft and previews it via inline vars ONLY. Nothing
+// touches disk until Save theme. Revert = back to baseline (= last save).
 const t = reactive(deepMerge(DEFAULT_THEME, workingTheme.value));
 const baseline = ref(plain(t));
+const syncedTheme = ref(state.theme);
 
 let internalAssign = false;
 const syncFrom = (src) => {
@@ -26,25 +27,8 @@ const syncFrom = (src) => {
   internalAssign = true;
   Object.assign(t, plain(merged));
 };
-syncFrom(state.resolved[state.theme]);
-// baseline resets only when a session context begins (theme opened/switched/
-// forked) — NOT after saves, or "revert" would forget what the session started
-// with. resolved arrives async, so we latch until it lands for this theme.
-let resetBaselineOnSync = true;
-watch(() => state.theme, () => { resetBaselineOnSync = true; });
-watch(
-  () => [state.theme, state.resolved[state.theme]],
-  () => {
-    if (state.dirty) return;
-    syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]);
-    if (resetBaselineOnSync && state.resolved[state.theme]) {
-      baseline.value = plain(t);
-      resetBaselineOnSync = false;
-    }
-  },
-);
+syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]);
 
-// ---- dirty / revert ----------------------------------------------------------
 const dig = (obj, path) => path.split(".").reduce((a, k) => a?.[k], obj);
 const put = (obj, path, v) => {
   const ks = path.split(".");
@@ -55,48 +39,60 @@ const put = (obj, path, v) => {
 const isD = (path) => dig(t, path) !== dig(baseline.value, path);
 const revert = (path) => { put(t, path, dig(baseline.value, path)); };
 const anyDirty = computed(() => JSON.stringify(plain(t)) !== JSON.stringify(baseline.value));
-function revertAll() {
-  Object.assign(t, plain(baseline.value));
-  saveNow();
-}
 
-// ---- persistence lifecycle -------------------------------------------------
-// Preview is instant (inline vars); saves are commit-driven (slider release,
-// color-panel close, font apply) with a slow safety net for programmatic edits.
-let saving = false;
-let pending = false;
-let mutCount = 0;
-let timer = null;
+// theme switching: drafts belong to a theme; confirm before discarding
+let restoring = false;
+watch(
+  () => state.theme,
+  (n, o) => {
+    if (restoring) { restoring = false; return; } // coming back to keep the draft
+    const src = state.resolved[n] ?? state.rawTokens[n];
+    // a fork writes the draft as the new theme's file — adopting it is not a discard
+    const draftIsNewTheme = src && JSON.stringify(deepMerge(DEFAULT_THEME, plain(src))) === JSON.stringify(plain(t));
+    if (anyDirty.value && n !== syncedTheme.value && !draftIsNewTheme) {
+      if (!window.confirm(`Discard unsaved draft in "${syncedTheme.value}"?`)) {
+        restoring = true;
+        setTheme(o);
+        return;
+      }
+    }
+    if (n !== syncedTheme.value) {
+      // new session context: adopt whatever the file says, re-baseline
+      syncFrom(state.resolved[n] ?? state.rawTokens[n]);
+      baseline.value = plain(t);
+      syncedTheme.value = n;
+    }
+  },
+);
+// resolved data arriving (initial load / theme switch fetch)
+watch(
+  () => state.resolved[state.theme],
+  (r) => {
+    if (!r || anyDirty.value) return; // never clobber an in-progress draft
+    syncFrom(r);
+    baseline.value = plain(t);
+    syncedTheme.value = state.theme;
+  },
+);
 
-async function saveNow() {
-  clearTimeout(timer);
-  if (saving) { pending = true; return; }
-  saving = true;
-  let lastSeen = mutCount;
-  do {
-    pending = false;
-    lastSeen = mutCount;
-    const ok = await saveTheme(plain(t));
-    if (!ok) break;
-  } while (pending); // user moved again mid-save -> persist the latest, not the stale
-  saving = false;
-  if (lastSeen === mutCount) {
-    clearPreview(); // quiet page, file CSS matches preview exactly: hand over
-    state.dirty = false;
-  }
-}
-
-function queueSave() {
-  state.dirty = true;
-  mutCount++;
-  previewTheme(plain(t)); // reflow-free live feedback on every input event
-  clearTimeout(timer);
-  timer = setTimeout(saveNow, 1500); // safety net: edits with no commit signal
-}
+// ---- preview on every edit; persistence is deliberate -----------------------
 watch(t, () => {
   if (internalAssign) { internalAssign = false; return; }
-  queueSave();
+  previewTheme(plain(t));
 }, { deep: true });
+
+async function saveDraft() {
+  const ok = await saveTheme(plain(t));
+  if (!ok) return;
+  // the draft IS the file now: re-baseline, hand preview back to file CSS
+  baseline.value = plain(t);
+  syncedTheme.value = state.theme;
+  clearPreview();
+}
+
+function revertAll() {
+  Object.assign(t, plain(baseline.value)); // watcher previews the restore
+}
 
 // ---- fonts ------------------------------------------------------------------
 function loadGoogleFont(family) {
@@ -117,12 +113,10 @@ async function setFont(slot, family) {
   if (!family) return;
   if (CURATED_FONTS.includes(family)) {
     try { await loadFont(family); } catch { /* apply anyway if load fails */ }
-    t.fonts[slot] = family;
-    saveNow(); // async apply has no native commit event — persist now
   } else {
     loadGoogleFont(family);
-    t.fonts[slot] = family;
   }
+  t.fonts[slot] = family; // draft edit; preview watcher picks it up
 }
 
 const freeText = reactive({ display: "", text: "", mono: "" });
@@ -148,7 +142,11 @@ function applyPick(kind, key, hex) {
   }
 }
 
-const fails = computed(() => contrastRows.value.filter((r) => !r.pass));
+// the gate runs on the DRAFT, client-side — you can fail AA before you save, not after
+const liveReport = computed(() => {
+  try { return contrastReport(plain(t)); } catch { return contrastRows.value; }
+});
+const fails = computed(() => liveReport.value.filter((r) => !r.pass));
 const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
 const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
 </script>
@@ -159,11 +157,15 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
       <div>
         <div class="flex items-center justify-between gap-2">
           <h3 class="text-base font-semibold">Theme editor</h3>
-          <Button v-if="anyDirty" size="sm" variant="ghost" @click="revertAll">Revert all</Button>
+          <div class="flex items-center gap-2">
+            <Badge v-if="anyDirty" accent="warn" variant="outline">unsaved</Badge>
+            <Button v-if="anyDirty" size="sm" variant="ghost" @click="revertAll">Revert all</Button>
+            <Button size="sm" :disabled="!anyDirty" @click="saveDraft">Save theme</Button>
+          </div>
         </div>
         <p class="text-xs leading-relaxed mt-1" style="color: var(--rc-ink-muted)">
-          Previews instantly, writes on release. Controls turn amber when they differ from
-          the theme as opened — ↺ puts one back, Revert all puts everything back.
+          Changes preview live but touch nothing until <em>Save theme</em>. Amber controls
+          differ from the saved file — ↺ reverts one, Revert all reverts the session.
         </p>
         <p class="min-h-[1.25rem] text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
       </div>
@@ -188,9 +190,9 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         </div>
         <div class="space-y-1">
           <Slider label="size" suffix="px" :decimals="1" v-model="t.type.base" :min="14" :max="19" :step="0.5"
-            :dirty="isD('type.base')" @commit="saveNow" @revert="revert('type.base')" />
+            :dirty="isD('type.base')" @revert="revert('type.base')" />
           <Slider label="ratio" :decimals="3" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001"
-            :dirty="isD('type.ratio')" @commit="saveNow" @revert="revert('type.ratio')" />
+            :dirty="isD('type.ratio')" @revert="revert('type.ratio')" />
         </div>
       </section>
 
@@ -199,14 +201,14 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         <div class="flex items-center gap-2">
           <ColorPicker :model-value="seedHex('neutral')" shape="square" title="Pick the neutral tint — the grays follow it"
             :dirty="isD('color.neutral.hue') || isD('color.neutral.chroma')"
-            @update:model-value="applyPick('neutral', null, $event)" @commit="saveNow"
+            @update:model-value="applyPick('neutral', null, $event)"
             @revert="revert('color.neutral.hue'); revert('color.neutral.chroma')" />
           <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Neutrals · hue-tinted grays</h4>
         </div>
         <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360"
-          :dirty="isD('color.neutral.hue')" @commit="saveNow" @revert="revert('color.neutral.hue')" />
+          :dirty="isD('color.neutral.hue')" @revert="revert('color.neutral.hue')" />
         <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
-          :dirty="isD('color.neutral.chroma')" @commit="saveNow" @revert="revert('color.neutral.chroma')" />
+          :dirty="isD('color.neutral.chroma')" @revert="revert('color.neutral.chroma')" />
       </section>
 
       <!-- Accents -->
@@ -216,15 +218,15 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           <div class="flex items-center gap-2">
             <ColorPicker :model-value="seedHex('accent', k)" :title="`Pick a color for ${k}`"
               :dirty="isD(`color.accents.${k}.hue`) || isD(`color.accents.${k}.chroma`)"
-              @update:model-value="applyPick('accent', k, $event)" @commit="saveNow"
+              @update:model-value="applyPick('accent', k, $event)"
               @revert="revert(`color.accents.${k}.hue`); revert(`color.accents.${k}.chroma`)" />
             <span class="font-medium capitalize">{{ k }}</span>
           </div>
           <div class="space-y-1">
             <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360"
-              :dirty="isD(`color.accents.${k}.hue`)" @commit="saveNow" @revert="revert(`color.accents.${k}.hue`)" />
+              :dirty="isD(`color.accents.${k}.hue`)" @revert="revert(`color.accents.${k}.hue`)" />
             <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005"
-              :dirty="isD(`color.accents.${k}.chroma`)" @commit="saveNow" @revert="revert(`color.accents.${k}.chroma`)" />
+              :dirty="isD(`color.accents.${k}.chroma`)" @revert="revert(`color.accents.${k}.chroma`)" />
           </div>
         </div>
       </section>
@@ -233,19 +235,19 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
       <section class="space-y-1.5">
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Geometry</h4>
         <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24"
-          :dirty="isD('scale.radius')" @commit="saveNow" @revert="revert('scale.radius')" />
+          :dirty="isD('scale.radius')" @revert="revert('scale.radius')" />
         <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01"
-          :dirty="isD('scale.density')" @commit="saveNow" @revert="revert('scale.density')" />
+          :dirty="isD('scale.density')" @revert="revert('scale.density')" />
         <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05"
-          :dirty="isD('scale.shadow')" @commit="saveNow" @revert="revert('scale.shadow')" />
+          :dirty="isD('scale.shadow')" @revert="revert('scale.shadow')" />
       </section>
 
       <!-- Contrast gate -->
       <section>
         <h4 class="text-xs uppercase tracking-widest font-mono mb-2" style="color:var(--rc-ink-faint)">Contrast · WCAG AA</h4>
         <div class="min-h-[3.5rem]">
-          <p v-if="!contrastRows.length" class="text-xs" style="color:var(--rc-ink-faint)">report pending — dev server required</p>
-          <Badge v-else-if="!fails.length" accent="success">All {{ contrastRows.length }} pairs pass</Badge>
+          <p v-if="!liveReport.length" class="text-xs" style="color:var(--rc-ink-faint)">computing…</p>
+          <Badge v-else-if="!fails.length" accent="success">All {{ liveReport.length }} pairs pass</Badge>
           <ul v-else class="space-y-1">
             <li v-for="f in fails" :key="f.mode + f.pair">
               <Badge accent="danger" variant="outline">{{ f.mode }} {{ f.pair }} · {{ f.ratio }} &lt; {{ f.need }}</Badge>
@@ -259,10 +261,10 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         <h4 class="text-xs uppercase tracking-widest font-mono mb-2" style="color:var(--rc-ink-faint)">New client theme</h4>
         <div class="flex gap-2 items-center">
           <Input v-model="forkName" placeholder="client-name" size="sm" />
-          <Button size="sm" variant="outline" :disabled="!forkValid" @click="emit('fork')">Fork</Button>
+          <Button size="sm" variant="outline" :disabled="!forkValid" @click="emit('fork', plain(t))">Fork</Button>
         </div>
         <p class="text-xs mt-2" style="color: var(--rc-ink-faint)">
-          Forks are snapshots (inheritance dropped) — per-client themes should be pinned.
+          Forks snapshot the current draft (inheritance dropped) — per-client themes should be pinned.
         </p>
       </section>
     </div>
