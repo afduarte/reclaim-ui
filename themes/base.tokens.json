@@ -2,19 +2,42 @@
   "name": "base",
   "inherits": null,
   "fonts": {
-    "display": "Fraunces",
-    "text": "Public Sans",
+    "display": "Bricolage Grotesque",
+    "text": "JetBrains Mono",
     "mono": "JetBrains Mono"
   },
   "color": {
-    "neutral": { "hue": 264, "chroma": 0.011 },
+    "neutral": {
+      "hue": 264,
+      "chroma": 0.011
+    },
     "accents": {
-      "brand": { "hue": 264, "chroma": 0.165 },
-      "success": { "hue": 155, "chroma": 0.13 },
-      "warn": { "hue": 85, "chroma": 0.15 },
-      "danger": { "hue": 25, "chroma": 0.18 }
+      "brand": {
+        "hue": 264,
+        "chroma": 0.165
+      },
+      "success": {
+        "hue": 155,
+        "chroma": 0.13
+      },
+      "warn": {
+        "hue": 85,
+        "chroma": 0.15
+      },
+      "danger": {
+        "hue": 25,
+        "chroma": 0.18
+      }
     }
   },
-  "scale": { "radius": 10, "density": 1, "shadow": 0.65 },
-  "type": { "base": 16, "ratio": 1.2, "trackingHeading": -0.015 }
+  "scale": {
+    "radius": 10,
+    "density": 1,
+    "shadow": 0.65
+  },
+  "type": {
+    "base": 16,
+    "ratio": 1.2,
+    "trackingHeading": -0.015
+  }
 }

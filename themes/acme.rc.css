@@ -56,7 +56,7 @@
   --rc-danger-900: color(srgb 0.34523802911449286 0.04501595166293793 0.057460478506064304);
   --rc-danger-950: color(srgb 0.15178092821311745 1.3027339623716826e-16 0.0011745665075103562);
   --rc-font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --rc-font-text: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --rc-font-text: "JetBrains Mono", ui-sans-serif, system-ui, sans-serif;
   --rc-font-mono: "JetBrains Mono", ui-monospace, monospace;
   --rc-text-xs: 13px;
   --rc-text-sm: 14px;

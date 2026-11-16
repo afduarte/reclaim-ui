@@ -225,3 +225,10 @@
   width: calc(var(--rc-control-h) * 0.5);
   height: calc(var(--rc-control-h) * 0.5);
 }
+
+.rc-range {
+  width: 100%;
+  height: 1.375rem;
+  accent-color: var(--rc-brand-solid);
+  cursor: pointer;
+}

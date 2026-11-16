@@ -119,11 +119,11 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
       <div class="grid grid-cols-2 gap-3">
         <label class="block">
           <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">size {{ t.type.base }}px</span>
-          <input type="range" min="14" max="19" step="0.5" v-model.number="t.type.base" class="w-full rc-check-native !h-auto" />
+          <input type="range" min="14" max="19" step="0.5" v-model.number="t.type.base" class="rc-range" />
         </label>
         <label class="block">
           <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">ratio {{ t.type.ratio.toFixed(2) }}</span>
-          <input type="range" min="1.067" max="1.422" step="0.001" v-model.number="t.type.ratio" class="w-full rc-check-native !h-auto" />
+          <input type="range" min="1.067" max="1.422" step="0.001" v-model.number="t.type.ratio" class="rc-range" />
         </label>
       </div>
     </fieldset>
@@ -139,11 +139,11 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
       <span class="text-xs align-middle" style="color:var(--rc-ink-muted)">swatch = click to pick tint</span>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">hue {{ t.color.neutral.hue }}°</span>
-        <input type="range" min="0" max="360" v-model.number="t.color.neutral.hue" class="w-full rc-check-native !h-auto" />
+        <input type="range" min="0" max="360" v-model.number="t.color.neutral.hue" class="rc-range" />
       </label>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">chroma {{ t.color.neutral.chroma.toFixed(3) }}</span>
-        <input type="range" min="0" max="0.035" step="0.001" v-model.number="t.color.neutral.chroma" class="w-full rc-check-native !h-auto" />
+        <input type="range" min="0" max="0.035" step="0.001" v-model.number="t.color.neutral.chroma" class="rc-range" />
       </label>
     </fieldset>
 
@@ -162,11 +162,11 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
         <div class="grid grid-cols-2 gap-2">
           <label class="block">
             <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">hue {{ t.color.accents[k].hue }}°</span>
-            <input type="range" min="0" max="360" v-model.number="t.color.accents[k].hue" class="w-full rc-check-native !h-auto" />
+            <input type="range" min="0" max="360" v-model.number="t.color.accents[k].hue" class="rc-range" />
           </label>
           <label class="block">
             <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">chroma {{ t.color.accents[k].chroma.toFixed(3) }}</span>
-            <input type="range" min="0" max="0.28" step="0.005" v-model.number="t.color.accents[k].chroma" class="w-full rc-check-native !h-auto" />
+            <input type="range" min="0" max="0.28" step="0.005" v-model.number="t.color.accents[k].chroma" class="rc-range" />
           </label>
         </div>
       </div>
@@ -177,15 +177,15 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
       <legend class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Geometry</legend>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">radius {{ t.scale.radius }}px</span>
-        <input type="range" min="0" max="24" v-model.number="t.scale.radius" class="w-full rc-check-native !h-auto" />
+        <input type="range" min="0" max="24" v-model.number="t.scale.radius" class="rc-range" />
       </label>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">density {{ t.scale.density.toFixed(2) }}</span>
-        <input type="range" min="0.85" max="1.2" step="0.01" v-model.number="t.scale.density" class="w-full rc-check-native !h-auto" />
+        <input type="range" min="0.85" max="1.2" step="0.01" v-model.number="t.scale.density" class="rc-range" />
       </label>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">shadow {{ t.scale.shadow.toFixed(2) }}</span>
-        <input type="range" min="0" max="1" step="0.05" v-model.number="t.scale.shadow" class="w-full rc-check-native !h-auto" />
+        <input type="range" min="0" max="1" step="0.05" v-model.number="t.scale.shadow" class="rc-range" />
       </label>
     </fieldset>
 
