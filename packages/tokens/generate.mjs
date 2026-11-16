@@ -4,17 +4,29 @@ import path from "node:path";
 import { buildThemeCSS, contrastReport } from "./index.mjs";
 import { listThemeFiles, readThemeWithInheritance } from "./files.mjs";
 
+// write only when content actually changed — keeps git status honest and
+// avoids churn that a watching dev server would mistake for real edits
+function writeIfChanged(file, content) {
+  try {
+    if (readFileSync(file, "utf8") === content) return false;
+  } catch {}
+  writeFileSync(file, content);
+  return true;
+}
+
 export function runGenerate(themesDir) {
   const results = [];
   for (const file of listThemeFiles(themesDir)) {
     const theme = readThemeWithInheritance(themesDir, file);
     const css = buildThemeCSS(theme);
-    const cssOut = path.join(themesDir, `${theme.name}.rc.css`);
-    writeFileSync(cssOut, `/* GENERATED FROM ${path.basename(file)} — do not edit. Run: npm run gen */\n${css}`);
+    writeIfChanged(
+      path.join(themesDir, `${theme.name}.rc.css`),
+      `/* GENERATED FROM ${path.basename(file)} — do not edit. Run: npm run gen */\n${css}`,
+    );
     const rows = contrastReport(theme);
-    writeFileSync(
+    writeIfChanged(
       path.join(themesDir, `${theme.name}.report.json`),
-      JSON.stringify({ generatedFrom: path.basename(file), theme: theme.name, rows }, null, 2),
+      JSON.stringify({ generatedFrom: path.basename(file), theme: theme.name, rows }, null, 2) + "\n",
     );
     const fails = rows.filter((r) => !r.pass);
     results.push({ theme: theme.name, fails });

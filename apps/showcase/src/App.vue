@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { state, themeNames, setTheme, initAll, forkTheme } from "./themes.js";
+import { state, themeNames, setTheme, initAll, forkTheme, deleteTheme } from "./themes.js";
 import { Button, Select } from "@reclaim/ui";
 import Specimens from "./views/Specimens.vue";
 import Compositions from "./views/Compositions.vue";
@@ -24,6 +24,11 @@ async function doFork(draft) {
   forking.value = false;
   forkName.value = "";
 }
+
+async function onDeleteTheme() {
+  if (!window.confirm(`Delete theme "${state.theme}"?\n\nRemoves themes/${state.theme}.* files — recoverable via git.`)) return;
+  await deleteTheme(state.theme);
+}
 </script>
 
 <template>
@@ -46,8 +51,15 @@ async function doFork(draft) {
         </nav>
 
         <div class="ml-auto flex items-center gap-2">
-          <div class="w-32">
-            <Select size="sm" :model-value="state.theme" :options="themeOptions" @update:model-value="setTheme($event)" />
+          <div class="flex items-center gap-1.5">
+            <div class="w-32">
+              <Select size="sm" :model-value="state.theme" :options="themeOptions" @update:model-value="setTheme($event)" />
+            </div>
+            <Button
+              size="sm" variant="ghost" :disabled="themeNames.length <= 1"
+              title="Delete current theme (its files, recoverable via git)"
+              @click="onDeleteTheme"
+            >✕</Button>
           </div>
           <Button size="sm" variant="ghost" @click="state.dark = !state.dark">
             {{ state.dark ? "Light" : "Dark" }}

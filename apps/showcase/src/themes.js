@@ -48,28 +48,13 @@ export function ensureFonts(theme) {
   }
 }
 
-const cssModules = import.meta.glob("../../../themes/*.rc.css", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
-const tokenModules = import.meta.glob("../../../themes/*.tokens.json", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
-
-function nameOf(p) {
-  return p.split("/").pop().replace(/\.(rc\.css|tokens\.json)$/, "");
-}
-
 export const state = reactive({
   theme: "base",
   dark: false,
   /** name -> raw generated css */
-  css: Object.fromEntries(Object.entries(cssModules).map(([p, v]) => [nameOf(p), v])),
+  css: {},
   /** name -> raw tokens file content (sparse; overrides only) */
-  rawTokens: Object.fromEntries(Object.entries(tokenModules).map(([p, v]) => [nameOf(p), JSON.parse(v)])),
+  rawTokens: {},
   /** name -> fully resolved theme (from the dev API when available) */
   resolved: {},
   /** name -> contrast report rows */
@@ -81,12 +66,42 @@ export const state = reactive({
   notice: "",
 });
 
+export const themeNames = computed(() => Object.keys(state.css).sort());
+
+let bootstrapped = false;
+export async function bootstrap() {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  let catalog = null;
+  try {
+    const r = await fetch("/api/themes");
+    if (r.ok) catalog = await r.json();
+  } catch {
+    /* no dev server — fall through to bundled data */
+  }
+  if (catalog) {
+    for (const t of catalog) {
+      state.css[t.name] = t.css;
+      state.rawTokens[t.name] = t.raw;
+      state.resolved[t.name] = t.resolved;
+      state.reports[t.name] = t.report;
+      ensureFonts(t.resolved);
+    }
+  } else {
+    // The studio IS the dev server's client: saves, resolution, and contrast
+    // reports all go through the middleware. No API, no studio — by design.
+    state.notice = "dev API unavailable — run the studio with `npm run dev`";
+  }
+  if (!state.css[state.theme]) state.theme = themeNames.value[0] ?? "base";
+  installThemeStyles();
+  applyThemeAttrs();
+}
+
 /** Checks view requests a fix; the editor adopts it into the draft. */
 export function requestPatch(patch) {
   state.pendingPatch = patch;
 }
 
-export const themeNames = computed(() => Object.keys(state.css).sort());
 
 watch(() => [state.theme, state.dark], () => { clearPreview(); applyThemeAttrs(); });
 
@@ -170,11 +185,7 @@ export async function setTheme(name) {
 }
 
 export async function initAll() {
-  for (const n of themeNames.value) {
-    ensureFonts(state.rawTokens[n]);
-    await refreshTheme(n);
-  }
-  applyThemeAttrs();
+  await bootstrap();
 }
 
 /**
@@ -196,6 +207,20 @@ export async function saveTheme(tokens) {
   await refreshTheme(name);
   state.rawTokens[name] = tokens;
   state.notice = `Saved themes/${name}.tokens.json`;
+  return true;
+}
+
+export async function deleteTheme(name) {
+  const r = await fetch(`/api/themes/${name}`, { method: "DELETE" });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.ok === false) {
+    state.notice = data.error ?? `delete failed (${r.status})`;
+    return false;
+  }
+  for (const map of [state.css, state.rawTokens, state.resolved, state.reports]) delete map[name];
+  document.getElementById(`rc-theme-${name}`)?.remove();
+  if (state.theme === name) await setTheme(themeNames.value[0] ?? "base");
+  state.notice = `deleted theme "${name}" — recoverable via git`;
   return true;
 }
 

@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { sparsePatch } from "@reclaim/tokens";
-import { readThemeWithInheritance } from "@reclaim/tokens/files.mjs";
+import { readThemeWithInheritance, listThemeFiles } from "@reclaim/tokens/files.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const themesDir = path.resolve(here, "../../themes");
@@ -31,9 +31,26 @@ function themeWriter() {
   return {
     name: "reclaim-theme-writer",
     configureServer(server) {
-      server.middlewares.use("/api/themes/", (req, res) => {
-        const parts = req.url.split("?")[0].split("/").filter(Boolean); // [name, sub?]
+      server.middlewares.use("/api/themes", (req, res) => {
+        const parts = req.url.split("?")[0].split("/").filter(Boolean);
         const [name, sub] = parts;
+
+        // GET /api/themes — full catalog in one shot so the client never has to
+        // import theme files through the module graph (avoids reload churn)
+        if (req.method === "GET" && !name) {
+          const all = listThemeFiles(themesDir).map((f) => {
+            const t = readThemeWithInheritance(themesDir, f);
+            return {
+              name: t.name,
+              raw: JSON.parse(readFileSync(f, "utf8")),
+              resolved: t,
+              css: readFileSync(path.join(themesDir, `${t.name}.rc.css`), "utf8"),
+              report: JSON.parse(readFileSync(path.join(themesDir, `${t.name}.report.json`), "utf8")).rows,
+            };
+          });
+          res.setHeader("content-type", "application/json");
+          return res.end(JSON.stringify(all));
+        }
         if (req.method === "GET" && /^[a-z0-9-]{2,40}$/.test(name)) {
           try {
             if (sub === "css") {
@@ -54,6 +71,40 @@ function themeWriter() {
             return res.end();
           }
         }
+        // DELETE /api/themes/<name> — remove a theme's files, guarded:
+        // parents of other themes and the last remaining theme are protected
+        if (req.method === "DELETE" && /^[a-z0-9-]{2,40}$/.test(name) && !sub) {
+          try {
+            const children = listThemeFiles(themesDir)
+              .filter((f) => {
+                try {
+                  return JSON.parse(readFileSync(f, "utf8")).inherits === name;
+                } catch {
+                  return false;
+                }
+              })
+              .map((f) => path.basename(f, ".tokens.json"));
+            if (children.length) {
+              res.statusCode = 409;
+              return res.end(JSON.stringify({ ok: false, error: `"${name}" is inherited by ${children.join(", ")} — re-fork those first` }));
+            }
+            if (listThemeFiles(themesDir).length <= 1) {
+              res.statusCode = 409;
+              return res.end(JSON.stringify({ ok: false, error: "cannot delete the last remaining theme" }));
+            }
+            for (const ext of ["tokens.json", "rc.css", "report.json", "md"]) {
+              const p = path.join(themesDir, `${name}.${ext}`);
+              if (existsSync(p)) rmSync(p);
+            }
+            regenerate();
+            res.end(JSON.stringify({ ok: true }));
+          } catch (e) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ ok: false, error: String(e?.message ?? e) }));
+          }
+          return;
+        }
+
         if (req.method !== "POST") {
           res.statusCode = 405;
           return res.end();
@@ -99,10 +150,6 @@ export default defineConfig({
   root: here,
   server: {
     port: 5273,
-    watch: {
-      // regenerated .rc.css outside the app root must still trigger HMR
-      ignored: ["!**/themes/**"],
-    },
   },
 });
 

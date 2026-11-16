@@ -3,6 +3,7 @@ import { reactive, ref, watch, computed } from "vue";
 import { state, workingTheme, contrastRows, saveTheme, setTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
 import { DEFAULT_THEME, deepMerge, rampHex, pickColor, contrastReport, deriveFromBrand, rollPalette, suggestFontPairings } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
+import { extractLogoPalette } from "../logo.js";
 
 const emit = defineEmits(["fork"]);
 defineProps({ forking: Boolean });
@@ -47,7 +48,10 @@ const put = (obj, path, v) => {
 const tracked = () => JSON.parse(JSON.stringify(t));
 
 const isD = (path) => dig(t, path) !== dig(baseline.value, path);
-const revert = (path) => { put(t, path, dig(baseline.value, path)); };
+const revert = (path) => {
+  const v = dig(baseline.value, path);
+  if (v !== undefined) put(t, path, v); // dynamic accents absent from baseline: no-op (✕ removes them)
+};
 const anyDirty = computed(() => JSON.stringify(tracked()) !== JSON.stringify(baseline.value));
 
 // theme switching: drafts belong to a theme; confirm before discarding
@@ -200,6 +204,59 @@ function roll() {
   state.notice = `rolled ${r.scheme} tint — seed ${r.seed}`;
 }
 
+// ---- logo → brand extraction --------------------------------------------------
+const logoInput = ref(null);
+const logoColors = ref([]);
+const logoOver = ref(false);
+
+async function handleLogoFile(f) {
+  if (!f) return;
+  try {
+    logoColors.value = await extractLogoPalette(f);
+    state.notice = logoColors.value.length
+      ? `extracted ${logoColors.value.length} colors from logo`
+      : "no colors found in that image";
+  } catch (err) {
+    state.notice = `logo read failed: ${err?.message ?? err}`;
+  }
+}
+function onLogo(e) {
+  handleLogoFile(e.target.files?.[0]);
+  e.target.value = "";
+}
+function onLogoDrop(e) {
+  logoOver.value = false;
+  handleLogoFile(e.dataTransfer?.files?.[0]);
+}
+function applyLogoColor(c, derive = false) {
+  t.color.accents.brand.hue = c.hue;
+  t.color.accents.brand.chroma = Math.min(0.24, Math.max(0.08, c.chroma));
+  if (derive) deriveRest();
+  else state.notice = `brand set to ${c.hue}° — hit Derive or pick more swatches`;
+}
+
+// ---- dynamic accent roles ------------------------------------------------------
+const newAccent = ref("");
+const newAccentValid = computed(() =>
+  /^[a-z][a-z0-9-]{1,18}$/.test(newAccent.value.trim()) && !t.color.accents?.[newAccent.value.trim()],
+);
+function addAccent() {
+  const name = newAccent.value.trim();
+  if (!newAccentValid.value) return;
+  const hues = Object.values(t.color.accents).map((a) => a.hue);
+  let best = 0, bestScore = -1;
+  for (let h = 0; h < 360; h += 15) {
+    const min = Math.min(...hues.map((x) => Math.abs((((h - x + 540) % 360) - 180))));
+    if (min > bestScore) { bestScore = min; best = h; }
+  }
+  t.color.accents[name] = { hue: best, chroma: 0.13 };
+  newAccent.value = "";
+  state.notice = `added "${name}" at ${best}° — farthest from existing accents`;
+}
+function removeAccent(k) {
+  if (k !== "brand") delete t.color.accents[k];
+}
+
 const fails = computed(() => liveReport.value.filter((r) => !r.pass));
 
 // don't let a refresh eat the draft
@@ -229,6 +286,38 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           differ from the saved file — ↺ reverts one, Revert all reverts the session.
         </p>
         <p class="min-h-[1.25rem] text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
+      </div>
+
+      <!-- start from a logo: the entry action belongs at the top -->
+      <div
+        class="rounded-rc border border-dashed px-4 py-3 text-center cursor-pointer transition-colors"
+        :class="logoOver ? '' : 'hover:bg-surface-2'"
+        :style="logoOver
+          ? 'border-color: var(--rc-brand); background: var(--rc-brand-soft)'
+          : 'border-color: var(--rc-line-strong); color: var(--rc-ink-muted)'"
+        @click="logoInput.click()"
+        @dragover.prevent="logoOver = true"
+        @dragleave="logoOver = false"
+        @drop.prevent="onLogoDrop"
+      >
+        <span class="text-sm">Drop a client logo here, or <span style="color: var(--rc-link)">browse…</span></span>
+        <input ref="logoInput" type="file" accept="image/*" class="hidden" @change="onLogo" />
+      </div>
+
+      <div v-if="logoColors.length" class="space-y-2">
+        <div class="flex items-center gap-1.5">
+          <span class="font-mono text-xs" style="color:var(--rc-ink-faint)">from logo:</span>
+          <Button size="sm" variant="soft" @click="applyLogoColor(logoColors[0], true)">use top as brand + derive</Button>
+          <Button size="sm" variant="ghost" @click="logoColors = []">dismiss</Button>
+        </div>
+        <div class="flex gap-1.5 flex-wrap">
+          <button
+            v-for="c in logoColors" :key="c.hex"
+            class="rc-swatch rc-swatch--circle" :style="{ background: c.hex }"
+            :title="`hue ${c.hue}° · chroma ${c.chroma} · ${Math.round(c.share * 100)}% of logo — click sets brand`"
+            @click="applyLogoColor(c)"
+          />
+        </div>
       </div>
 
       <!-- advanced switch -->
@@ -350,6 +439,7 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
               @update:model-value="applyPick('accent', k, $event)"
               @revert="revert(`color.accents.${k}.hue`); revert(`color.accents.${k}.chroma`)" />
             <span class="font-medium capitalize">{{ k }}</span>
+            <button v-if="k !== 'brand'" class="rc-revert ml-auto" title="Remove accent role" @click="removeAccent(k)">✕</button>
           </div>
           <div class="space-y-1">
             <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360"
@@ -366,6 +456,10 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           <Slider label="ring alpha" v-model="t.mapping.ringAlpha" :min="0.2" :max="0.8" :step="0.05"
             :dirty="isD('mapping.ringAlpha')" @revert="revert('mapping.ringAlpha')" />
         </template>
+        <div class="flex gap-1.5 items-center pt-1 border-t border-line">
+          <Input v-model="newAccent" size="sm" placeholder="new role: secondary, info…" />
+          <Button size="sm" variant="outline" :disabled="!newAccentValid" @click="addAccent">+ accent</Button>
+        </div>
       </section>
 
       <!-- Dark mode (advanced) -->

@@ -789,6 +789,77 @@ export function suggestFontPairings(theme) {
   return { display: top(out.display), text: top(out.text), mono: top(out.mono) };
 }
 
+/**
+ * K-means color quantization in OKLab for logo extraction. Pure function over
+ * raw RGBA pixels (browser wrapper lives in the studio) so it's testable in
+ * node and reusable by CI/agents. Ranked by share × vividness — the color
+ * that dominates AND carries chroma is the likely brand color.
+ */
+export function quantizePixels(pixels, k = 5) {
+  const toLab = converter("oklab");
+  const pts = [];
+  for (let i = 0; i < pixels.length; i += 4) {
+    if (pixels[i + 3] < 128) continue;
+    const lab = toLab({ mode: "rgb", r: pixels[i] / 255, g: pixels[i + 1] / 255, b: pixels[i + 2] / 255 });
+    if (lab) pts.push(lab);
+  }
+  if (!pts.length) return [];
+  const chromaOf = (p) => Math.hypot(p.a, p.b);
+  const dist = (p, c) => (p.l - c.l) ** 2 + (p.a - c.a) ** 2 + (p.b - c.b) ** 2;
+
+  // farthest-point init seeded by the most saturated pixel
+  let seed = 0;
+  for (let i = 1; i < pts.length; i++) if (chromaOf(pts[i]) > chromaOf(pts[seed])) seed = i;
+  const centers = [{ ...pts[seed] }];
+  while (centers.length < Math.min(k, pts.length)) {
+    let best = -1, bi = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const d = Math.min(...centers.map((c) => dist(pts[i], c)));
+      if (d > best) { best = d; bi = i; }
+    }
+    centers.push({ ...pts[bi] });
+  }
+
+  const assign = new Array(pts.length);
+  for (let iter = 0; iter < 12; iter++) {
+    for (let i = 0; i < pts.length; i++) {
+      let bi = 0, bd = Infinity;
+      for (let c = 0; c < centers.length; c++) {
+        const d = dist(pts[i], centers[c]);
+        if (d < bd) { bd = d; bi = c; }
+      }
+      assign[i] = bi;
+    }
+    const sums = centers.map(() => ({ l: 0, a: 0, b: 0, n: 0 }));
+    for (let i = 0; i < pts.length; i++) {
+      const s = sums[assign[i]];
+      s.l += pts[i].l; s.a += pts[i].a; s.b += pts[i].b; s.n++;
+    }
+    centers.forEach((c, ci) => {
+      if (!sums[ci].n) return;
+      c.l = sums[ci].l / sums[ci].n; c.a = sums[ci].a / sums[ci].n; c.b = sums[ci].b / sums[ci].n;
+    });
+  }
+
+  const counts = centers.map(() => 0);
+  assign.forEach((a) => counts[a]++);
+  const toHex = (lch) => {
+    const c = toSrgb({ mode: "oklch", l: lch.l, c: Math.hypot(lch.a, lch.b), h: ((Math.atan2(lch.b, lch.a) * 180 / Math.PI) + 360) % 360 });
+    return "#" + [c.r, c.g, c.b].map((v) => Math.round(clamp(v, 0, 1) * 255).toString(16).padStart(2, "0")).join("");
+  };
+  return centers
+    .map((c, i) => ({
+      hex: toHex(c),
+      hue: Math.round(((Math.atan2(c.b, c.a) * 180 / Math.PI) + 360) % 360),
+      chroma: round(Math.hypot(c.a, c.b)),
+      share: round(counts[i] / pts.length),
+    }))
+    .filter((c, i, arr) => c.share >= 0.02 && arr.findIndex((x) => x.hex === c.hex) === i)
+    // brand color of a logo is the CHROMATIC one, not the most common —
+    // white/gray background must not outrank it; chroma^0.8 dominates share
+    .sort((x, y) => y.share * Math.pow(y.chroma, 0.8) - x.share * Math.pow(x.chroma, 0.8));
+}
+
 // ---------------------------------------------------------------------------
 // Theme resolution (no fs): caller supplies a parent-resolver if one exists.
 // ---------------------------------------------------------------------------
