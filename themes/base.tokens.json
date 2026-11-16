@@ -18,16 +18,16 @@
         "chroma": 0.186
       },
       "success": {
-        "hue": 143,
+        "hue": 173,
         "chroma": 0.149
       },
       "warn": {
-        "hue": 73,
+        "hue": 100,
         "chroma": 0.167
       },
       "danger": {
-        "hue": 13,
-        "chroma": 0.177
+        "hue": 18,
+        "chroma": 0.207
       }
     }
   },

@@ -1,0 +1,73 @@
+{
+  "name": "test1",
+  "inherits": null,
+  "fonts": {
+    "display": "Geist",
+    "text": "Albert Sans",
+    "mono": "Inconsolata"
+  },
+  "color": {
+    "neutral": {
+      "hue": 290,
+      "chroma": 0.01
+    },
+    "canvas": null,
+    "accents": {
+      "brand": {
+        "hue": 290,
+        "chroma": 0.186
+      },
+      "success": {
+        "hue": 173,
+        "chroma": 0.149
+      },
+      "warn": {
+        "hue": 100,
+        "chroma": 0.167
+      },
+      "danger": {
+        "hue": 18,
+        "chroma": 0.207
+      }
+    }
+  },
+  "ramps": {
+    "contrast": 1
+  },
+  "mapping": {
+    "surfaceLift": 2,
+    "borderStep": 4,
+    "inkStep": 900,
+    "solidStep": 700,
+    "ringAlpha": 0.55
+  },
+  "type": {
+    "base": 16,
+    "ratio": 1.1,
+    "trackingHeading": -0.04,
+    "lineHeightBody": 1.35,
+    "lineHeightHeading": 1.1,
+    "weightHeading": 700,
+    "weightUI": 550,
+    "smallScale": 0.95
+  },
+  "scale": {
+    "radius": 3,
+    "density": 0.92,
+    "shadow": 0.75,
+    "controlH": 35,
+    "spaceUnit": 4,
+    "radiusSpread": 1.5,
+    "shadowHue": 300,
+    "shadowChroma": 0,
+    "motion": 1
+  },
+  "dark": {
+    "canvasLift": 0
+  },
+  "components": {
+    "tableCase": "uppercase",
+    "badgePill": false,
+    "cardBorder": true
+  }
+}

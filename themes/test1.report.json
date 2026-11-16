@@ -1,0 +1,102 @@
+{
+  "generatedFrom": "test1.tokens.json",
+  "theme": "test1",
+  "rows": [
+    {
+      "mode": "light",
+      "pair": "ink/canvas",
+      "ratio": 13.07,
+      "need": 4.5,
+      "headroom": 8.57,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "ink-muted/surface",
+      "ratio": 7.038,
+      "need": 4.5,
+      "headroom": 2.538,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "brand/canvas",
+      "ratio": 5.534,
+      "need": 4.5,
+      "headroom": 1.034,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "brand-solid-ink/brand-solid",
+      "ratio": 5.534,
+      "need": 4.5,
+      "headroom": 1.034,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "success/canvas",
+      "ratio": 4.698,
+      "need": 3,
+      "headroom": 1.698,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "warn/canvas",
+      "ratio": 5.103,
+      "need": 3,
+      "headroom": 2.103,
+      "pass": true
+    },
+    {
+      "mode": "light",
+      "pair": "danger/canvas",
+      "ratio": 5.718,
+      "need": 4.5,
+      "headroom": 1.218,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "ink/canvas",
+      "ratio": 13.07,
+      "need": 4.5,
+      "headroom": 8.57,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "ink-muted/surface",
+      "ratio": 7.038,
+      "need": 4.5,
+      "headroom": 2.538,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "brand/canvas",
+      "ratio": 5.534,
+      "need": 4.5,
+      "headroom": 1.034,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "brand-solid-ink/brand-solid",
+      "ratio": 5.534,
+      "need": 4.5,
+      "headroom": 1.034,
+      "pass": true
+    },
+    {
+      "mode": "dark",
+      "pair": "danger/canvas",
+      "ratio": 5.718,
+      "need": 4.5,
+      "headroom": 1.218,
+      "pass": true
+    }
+  ]
+}

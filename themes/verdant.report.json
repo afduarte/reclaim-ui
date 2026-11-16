@@ -37,25 +37,25 @@
     {
       "mode": "light",
       "pair": "success/canvas",
-      "ratio": 4.878,
+      "ratio": 4.699,
       "need": 3,
-      "headroom": 1.878,
+      "headroom": 1.699,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "warn/canvas",
-      "ratio": 5.276,
+      "ratio": 5.104,
       "need": 3,
-      "headroom": 2.276,
+      "headroom": 2.104,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "danger/canvas",
-      "ratio": 5.639,
+      "ratio": 5.719,
       "need": 4.5,
-      "headroom": 1.139,
+      "headroom": 1.219,
       "pass": true
     },
     {
@@ -93,9 +93,9 @@
     {
       "mode": "dark",
       "pair": "danger/canvas",
-      "ratio": 5.639,
+      "ratio": 5.719,
       "need": 4.5,
-      "headroom": 1.139,
+      "headroom": 1.219,
       "pass": true
     }
   ]
