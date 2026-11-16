@@ -11,8 +11,9 @@ const props = defineProps({
   valueText: { type: String, default: null },
   suffix: { type: String, default: "" },
   decimals: { type: Number, default: null },
+  dirty: { type: Boolean, default: false }, // differs from session baseline
 });
-const emit = defineEmits(["update:modelValue", "commit"]);
+const emit = defineEmits(["update:modelValue", "commit", "revert"]);
 
 const display = computed(() => {
   if (props.valueText != null) return props.valueText;
@@ -23,7 +24,7 @@ const display = computed(() => {
 </script>
 
 <template>
-  <label class="rc-slider">
+  <label class="rc-slider" :class="{ 'rc-slider--dirty': dirty }">
     <span v-if="label" class="rc-slider__label">{{ label }}<b class="rc-slider__value">{{ display }}</b></span>
     <input
       type="range"
@@ -35,5 +36,12 @@ const display = computed(() => {
       @input="emit('update:modelValue', parseFloat($event.target.value))"
       @change="emit('commit')"
     />
+    <button
+      v-if="dirty"
+      class="rc-revert"
+      type="button"
+      title="Revert to session baseline"
+      @click.prevent.stop="emit('revert')"
+    >↺</button>
   </label>
 </template>

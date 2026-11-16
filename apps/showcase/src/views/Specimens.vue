@@ -17,8 +17,26 @@ const geometryNote = computed(() => {
 
 <template>
   <div>
-    <Section title="Typography" note="display: var(--rc-font-display) · body: var(--rc-font-text)">
+    <Section title="Typography" note="each slot labeled · display: var(--rc-font-display) · text: var(--rc-font-text) · mono: var(--rc-font-mono)">
       <div class="space-y-5">
+        <!-- slot specimens: bound to the vars, so they track drags live -->
+        <div class="grid gap-3 rounded-rc border border-line bg-canvas px-5 py-4">
+          <div class="flex items-baseline gap-4">
+            <span class="w-16 font-mono text-xs uppercase tracking-widest" style="color: var(--rc-ink-faint)">Display</span>
+            <p class="text-2xl truncate" style="font-family: var(--rc-font-display); letter-spacing: var(--rc-tracking-heading)">
+              Reclaim the look you own — AaBbCc 0123
+            </p>
+          </div>
+          <div class="flex items-baseline gap-4">
+            <span class="w-16 font-mono text-xs uppercase tracking-widest" style="color: var(--rc-ink-faint)">Text</span>
+            <p style="font-family: var(--rc-font-text)">The quick brown fox jumps over the lazy dog — AaBbCc 0123</p>
+          </div>
+          <div class="flex items-baseline gap-4">
+            <span class="w-16 font-mono text-xs uppercase tracking-widest" style="color: var(--rc-ink-faint)">Mono</span>
+            <p class="text-sm" style="font-family: var(--rc-font-mono)">const theme = { radius: 10 } — AaBbCc 0123</p>
+          </div>
+        </div>
+
         <h1 class="text-4xl">The quip: reclaim the look you own</h1>
         <h2 class="text-3xl">H2 — section titles, generous tracking-negative</h2>
         <h3 class="text-2xl">H3 — card titles</h3>

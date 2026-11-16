@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, watch, computed } from "vue";
+import { reactive, ref, watch, computed } from "vue";
 import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
 import { DEFAULT_THEME, deepMerge, rampHex, pickColor } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
@@ -11,8 +11,13 @@ const forkName = defineModel("forkName", { type: String, default: "" });
 const CURATED_FONTS = Object.keys(FONT_LOADERS);
 const fontOptions = CURATED_FONTS.map((f) => ({ value: f, label: f }));
 
-// local editable mirror: defaults <- raw file <- resolved (as it arrives)
+// ---- editable mirror + session baseline ------------------------------------
+// t        = live editor state (what the preview shows)
+// baseline = the theme as it was when this session opened it. Saving does NOT
+//            move the baseline: "revert" always means "back to what it was".
 const t = reactive(deepMerge(DEFAULT_THEME, workingTheme.value));
+const baseline = ref(plain(t));
+
 let internalAssign = false;
 const syncFrom = (src) => {
   if (!src) return;
@@ -22,17 +27,45 @@ const syncFrom = (src) => {
   Object.assign(t, plain(merged));
 };
 syncFrom(state.resolved[state.theme]);
+// baseline resets only when a session context begins (theme opened/switched/
+// forked) — NOT after saves, or "revert" would forget what the session started
+// with. resolved arrives async, so we latch until it lands for this theme.
+let resetBaselineOnSync = true;
+watch(() => state.theme, () => { resetBaselineOnSync = true; });
 watch(
   () => [state.theme, state.resolved[state.theme]],
-  () => { if (!state.dirty) syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]); },
+  () => {
+    if (state.dirty) return;
+    syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]);
+    if (resetBaselineOnSync && state.resolved[state.theme]) {
+      baseline.value = plain(t);
+      resetBaselineOnSync = false;
+    }
+  },
 );
+
+// ---- dirty / revert ----------------------------------------------------------
+const dig = (obj, path) => path.split(".").reduce((a, k) => a?.[k], obj);
+const put = (obj, path, v) => {
+  const ks = path.split(".");
+  let c = obj;
+  for (const k of ks.slice(0, -1)) c = c[k];
+  c[ks.at(-1)] = v;
+};
+const isD = (path) => dig(t, path) !== dig(baseline.value, path);
+const revert = (path) => { put(t, path, dig(baseline.value, path)); };
+const anyDirty = computed(() => JSON.stringify(plain(t)) !== JSON.stringify(baseline.value));
+function revertAll() {
+  Object.assign(t, plain(baseline.value));
+  saveNow();
+}
 
 // ---- persistence lifecycle -------------------------------------------------
 // Preview is instant (inline vars); saves are commit-driven (slider release,
 // color-panel close, font apply) with a slow safety net for programmatic edits.
 let saving = false;
 let pending = false;
-let mutCount = 0; // bumped on every editor mutation
+let mutCount = 0;
 let timer = null;
 
 async function saveNow() {
@@ -65,7 +98,7 @@ watch(t, () => {
   queueSave();
 }, { deep: true });
 
-// fonts ---------------------------------------------------------------------
+// ---- fonts ------------------------------------------------------------------
 function loadGoogleFont(family) {
   const id = `gf-${family.toLowerCase().replace(/\s+/g, "-")}`;
   if (document.getElementById(id)) return;
@@ -83,12 +116,11 @@ function loadGoogleFont(family) {
 async function setFont(slot, family) {
   if (!family) return;
   if (CURATED_FONTS.includes(family)) {
-    // apply the token only once glyphs are real: no FOUT metric jump
     try { await loadFont(family); } catch { /* apply anyway if load fails */ }
     t.fonts[slot] = family;
     saveNow(); // async apply has no native commit event — persist now
   } else {
-    loadGoogleFont(family); // exploration path — best-effort, applies immediately
+    loadGoogleFont(family);
     t.fonts[slot] = family;
   }
 }
@@ -100,10 +132,10 @@ function applyFreeFont(slot) {
   freeText[slot] = "";
 }
 
-// color pickers: hex from the OS panel -> ramp params -------------------------
+// ---- color pickers -----------------------------------------------------------
 const seedHex = (kind, key) => {
   const spec = kind === "neutral" ? t.color.neutral : t.color.accents[key];
-  return rampHex(spec?.hue ?? 0, spec?.chroma ?? 0, 6); // step 600
+  return rampHex(spec?.hue ?? 0, spec?.chroma ?? 0, 6);
 };
 function applyPick(kind, key, hex) {
   const { hue, chroma } = pickColor(hex, kind === "neutral" ? 0.3 : 1);
@@ -119,26 +151,19 @@ function applyPick(kind, key, hex) {
 const fails = computed(() => contrastRows.value.filter((r) => !r.pass));
 const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
 const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
-
-// for the live slot preview: stack the chosen family over its generic fallback
-const fontStack = (family, kind) =>
-  `"${family}", ${kind === "mono" ? "ui-monospace, monospace" : "ui-sans-serif, sans-serif"}`;
 </script>
 
 <template>
   <Card>
     <div class="space-y-6 text-sm">
       <div>
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2">
           <h3 class="text-base font-semibold">Theme editor</h3>
-          <span class="font-mono text-xs" style="color: var(--rc-ink-faint)">
-            themes/{{ t.name }}.tokens.json{{ state.dirty ? " · writing" : "" }}
-          </span>
+          <Button v-if="anyDirty" size="sm" variant="ghost" @click="revertAll">Revert all</Button>
         </div>
         <p class="text-xs leading-relaxed mt-1" style="color: var(--rc-ink-muted)">
-          Every control previews instantly and writes on release — swatches open a color picker, sliders fine-tune
-          hue/chroma, and the gallery re-renders from the result. Undo any session with
-          <code class="font-mono">git checkout -- themes/{{ t.name }}.tokens.json</code>.
+          Previews instantly, writes on release. Controls turn amber when they differ from
+          the theme as opened — ↺ puts one back, Revert all puts everything back.
         </p>
         <p class="min-h-[1.25rem] text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
       </div>
@@ -146,27 +171,15 @@ const fontStack = (family, kind) =>
       <!-- Type -->
       <section class="space-y-3">
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Type</h4>
-
-        <!-- live slot preview: each line renders in the font it labels -->
-        <div class="rounded-rc border border-line bg-canvas px-4 py-3 space-y-2">
-          <p class="text-xl leading-none" :style="{ fontFamily: fontStack(t.fonts.display), letterSpacing: 'var(--rc-tracking-heading)' }">
-            Display — some text here
-          </p>
-          <p :style="{ fontFamily: fontStack(t.fonts.text) }">
-            Text — some other text
-          </p>
-          <p class="text-sm" :style="{ fontFamily: fontStack(t.fonts.mono, 'mono') }">
-            Mono — some more text
-          </p>
-        </div>
-
         <div v-for="slot in ['display', 'text', 'mono']" :key="slot" class="space-y-1">
           <Select
             :label="slot"
             :model-value="t.fonts[slot]"
+            :dirty="isD(`fonts.${slot}`)"
             :options="fontOptions.concat(CURATED_FONTS.includes(t.fonts[slot]) ? [] : [{ value: t.fonts[slot], label: t.fonts[slot] + ' (external)' }])"
             size="sm"
             @update:model-value="setFont(slot, $event)"
+            @revert="setFont(slot, dig(baseline, `fonts.${slot}`))"
           />
           <div class="flex gap-1 items-center">
             <Input v-model="freeText[slot]" placeholder="try any Google Font…" size="sm" @keyup.enter="applyFreeFont(slot)" />
@@ -174,8 +187,10 @@ const fontStack = (family, kind) =>
           </div>
         </div>
         <div class="space-y-1">
-          <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5" @commit="saveNow" />
-          <Slider label="ratio" :decimals="2" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001" @commit="saveNow" />
+          <Slider label="size" suffix="px" :decimals="1" v-model="t.type.base" :min="14" :max="19" :step="0.5"
+            :dirty="isD('type.base')" @commit="saveNow" @revert="revert('type.base')" />
+          <Slider label="ratio" :decimals="3" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001"
+            :dirty="isD('type.ratio')" @commit="saveNow" @revert="revert('type.ratio')" />
         </div>
       </section>
 
@@ -183,11 +198,15 @@ const fontStack = (family, kind) =>
       <section class="space-y-2">
         <div class="flex items-center gap-2">
           <ColorPicker :model-value="seedHex('neutral')" shape="square" title="Pick the neutral tint — the grays follow it"
-            @update:model-value="applyPick('neutral', null, $event)" @commit="saveNow" />
+            :dirty="isD('color.neutral.hue') || isD('color.neutral.chroma')"
+            @update:model-value="applyPick('neutral', null, $event)" @commit="saveNow"
+            @revert="revert('color.neutral.hue'); revert('color.neutral.chroma')" />
           <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Neutrals · hue-tinted grays</h4>
         </div>
-        <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360" @commit="saveNow" />
-        <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001" @commit="saveNow" />
+        <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360"
+          :dirty="isD('color.neutral.hue')" @commit="saveNow" @revert="revert('color.neutral.hue')" />
+        <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
+          :dirty="isD('color.neutral.chroma')" @commit="saveNow" @revert="revert('color.neutral.chroma')" />
       </section>
 
       <!-- Accents -->
@@ -196,22 +215,29 @@ const fontStack = (family, kind) =>
         <div v-for="k in accentKeys" :key="k" class="space-y-1.5">
           <div class="flex items-center gap-2">
             <ColorPicker :model-value="seedHex('accent', k)" :title="`Pick a color for ${k}`"
-              @update:model-value="applyPick('accent', k, $event)" @commit="saveNow" />
+              :dirty="isD(`color.accents.${k}.hue`) || isD(`color.accents.${k}.chroma`)"
+              @update:model-value="applyPick('accent', k, $event)" @commit="saveNow"
+              @revert="revert(`color.accents.${k}.hue`); revert(`color.accents.${k}.chroma`)" />
             <span class="font-medium capitalize">{{ k }}</span>
           </div>
           <div class="space-y-1">
-            <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360" @commit="saveNow" />
-            <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005" @commit="saveNow" />
+            <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360"
+              :dirty="isD(`color.accents.${k}.hue`)" @commit="saveNow" @revert="revert(`color.accents.${k}.hue`)" />
+            <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005"
+              :dirty="isD(`color.accents.${k}.chroma`)" @commit="saveNow" @revert="revert(`color.accents.${k}.chroma`)" />
           </div>
         </div>
       </section>
 
       <!-- Geometry -->
-      <section class="space-y-2">
+      <section class="space-y-1.5">
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Geometry</h4>
-        <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24" @commit="saveNow" />
-        <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01" @commit="saveNow" />
-        <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05" @commit="saveNow" />
+        <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24"
+          :dirty="isD('scale.radius')" @commit="saveNow" @revert="revert('scale.radius')" />
+        <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01"
+          :dirty="isD('scale.density')" @commit="saveNow" @revert="revert('scale.density')" />
+        <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05"
+          :dirty="isD('scale.shadow')" @commit="saveNow" @revert="revert('scale.shadow')" />
       </section>
 
       <!-- Contrast gate -->

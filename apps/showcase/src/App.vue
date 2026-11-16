@@ -57,14 +57,14 @@ async function doFork() {
     </header>
 
     <div class="mx-auto flex max-w-7xl gap-8 px-6 py-8 items-start">
+      <aside v-if="editorOpen" class="w-80 shrink-0 sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
+        <ThemeEditor @fork="doFork" :forking="forking" v-model:forkName="forkName" />
+      </aside>
+
       <main class="flex-1 min-w-0">
         <Specimens v-if="view === 'specimens'" />
         <Compositions v-else />
       </main>
-
-      <aside v-if="editorOpen" class="w-80 shrink-0 sticky top-20">
-        <ThemeEditor @fork="doFork" :forking="forking" v-model:forkName="forkName" />
-      </aside>
     </div>
   </div>
 </template>

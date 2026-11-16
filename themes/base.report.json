@@ -19,14 +19,14 @@
     {
       "mode": "light",
       "pair": "brand/canvas",
-      "ratio": 5.165,
+      "ratio": 5.557,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.165,
+      "ratio": 5.557,
       "need": 4.5,
       "pass": true
     },
@@ -68,14 +68,14 @@
     {
       "mode": "dark",
       "pair": "brand/canvas",
-      "ratio": 5.165,
+      "ratio": 5.557,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.165,
+      "ratio": 5.557,
       "need": 4.5,
       "pass": true
     },

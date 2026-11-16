@@ -8,13 +8,13 @@
   },
   "color": {
     "neutral": {
-      "hue": 160,
+      "hue": 118,
       "chroma": 0
     },
     "accents": {
       "brand": {
-        "hue": 0,
-        "chroma": 0
+        "hue": 315,
+        "chroma": 0.158
       },
       "success": {
         "hue": 359,
@@ -31,13 +31,13 @@
     }
   },
   "scale": {
-    "radius": 2,
+    "radius": 1,
     "density": 0.85,
     "shadow": 0.1
   },
   "type": {
-    "base": 15.5,
-    "ratio": 1.2,
+    "base": 14,
+    "ratio": 1.167,
     "trackingHeading": -0.015
   }
 }
