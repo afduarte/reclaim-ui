@@ -112,7 +112,7 @@ const fontStack = (family, kind) =>
           hue/chroma, and the gallery re-renders from the result. Undo any session with
           <code class="font-mono">git checkout -- themes/{{ t.name }}.tokens.json</code>.
         </p>
-        <p v-if="state.notice" class="text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
+        <p class="min-h-[1.25rem] text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
       </div>
 
       <!-- Type -->
@@ -145,7 +145,7 @@ const fontStack = (family, kind) =>
             <Button size="sm" variant="ghost" @click="applyFreeFont(slot)">load</Button>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1">
           <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5" />
           <Slider label="ratio" :decimals="2" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001" />
         </div>
@@ -171,7 +171,7 @@ const fontStack = (family, kind) =>
               @update:model-value="applyPick('accent', k, $event)" />
             <span class="font-medium capitalize">{{ k }}</span>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
             <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360" />
             <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005" />
           </div>
@@ -189,13 +189,15 @@ const fontStack = (family, kind) =>
       <!-- Contrast gate -->
       <section>
         <h4 class="text-xs uppercase tracking-widest font-mono mb-2" style="color:var(--rc-ink-faint)">Contrast · WCAG AA</h4>
-        <p v-if="!contrastRows.length" class="text-xs" style="color:var(--rc-ink-faint)">report pending — dev server required</p>
-        <Badge v-else-if="!fails.length" accent="success">All {{ contrastRows.length }} pairs pass</Badge>
-        <ul v-else class="space-y-1">
-          <li v-for="f in fails" :key="f.mode + f.pair">
-            <Badge accent="danger" variant="outline">{{ f.mode }} {{ f.pair }} · {{ f.ratio }} &lt; {{ f.need }}</Badge>
-          </li>
-        </ul>
+        <div class="min-h-[3.5rem]">
+          <p v-if="!contrastRows.length" class="text-xs" style="color:var(--rc-ink-faint)">report pending — dev server required</p>
+          <Badge v-else-if="!fails.length" accent="success">All {{ contrastRows.length }} pairs pass</Badge>
+          <ul v-else class="space-y-1">
+            <li v-for="f in fails" :key="f.mode + f.pair">
+              <Badge accent="danger" variant="outline">{{ f.mode }} {{ f.pair }} · {{ f.ratio }} &lt; {{ f.need }}</Badge>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <!-- Fork / snapshot -->
