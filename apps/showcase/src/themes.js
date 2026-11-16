@@ -34,7 +34,12 @@ export function loadFont(family) {
   const ready = loadedFonts.has(family)
     ? Promise.resolve()
     : loader().then(() => { loadedFonts.add(family); return document.fonts.ready; });
-  return ready.then(() => document.fonts.load(`16px "${family}"`, "AaBb0123"));
+  return ready.then(() =>
+    Promise.all([
+      document.fonts.load(`16px "${family} Variable"`, "AaBb0123"),
+      document.fonts.load(`16px "${family}"`, "AaBb0123"),
+    ]),
+  );
 }
 export function ensureFonts(theme) {
   for (const family of Object.values(theme?.fonts ?? {})) {

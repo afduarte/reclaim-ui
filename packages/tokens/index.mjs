@@ -145,10 +145,13 @@ function scaleVars(theme) {
   const { radius, density, shadow } = theme.scale;
   const { base, ratio, trackingHeading } = theme.type;
   const t = (exp) => `${round(base * Math.pow(ratio, exp))}px`;
+  // "@fontsource-variable/*" registers families as "<Name> Variable"; plain and
+  // Google-loaded names match the bare name. Stacking both makes every source work.
+  const stack = (f, generic) => `"${f} Variable", "${f}", ${generic}`;
   const vars = {
-    "--rc-font-display": `"${theme.fonts.display}", ui-sans-serif, system-ui, sans-serif`,
-    "--rc-font-text": `"${theme.fonts.text}", ui-sans-serif, system-ui, sans-serif`,
-    "--rc-font-mono": `"${theme.fonts.mono}", ui-monospace, monospace`,
+    "--rc-font-display": stack(theme.fonts.display, "ui-sans-serif, system-ui, sans-serif"),
+    "--rc-font-text": stack(theme.fonts.text, "ui-sans-serif, system-ui, sans-serif"),
+    "--rc-font-mono": stack(theme.fonts.mono, "ui-monospace, monospace"),
     "--rc-text-xs": `${round(base * 0.8125)}px`,
     "--rc-text-sm": `${round(base * 0.875)}px`,
     "--rc-text-base": `${round(base)}px`,

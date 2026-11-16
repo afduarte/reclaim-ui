@@ -55,9 +55,9 @@
   --rc-danger-800: color(srgb 0.5329272136104732 0.12094329270952564 0.12818322865815854);
   --rc-danger-900: color(srgb 0.34523802911449286 0.04501595166293793 0.057460478506064304);
   --rc-danger-950: color(srgb 0.15178092821311745 1.3027339623716826e-16 0.0011745665075103562);
-  --rc-font-display: "Fraunces", ui-sans-serif, system-ui, sans-serif;
-  --rc-font-text: "Figtree", ui-sans-serif, system-ui, sans-serif;
-  --rc-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --rc-font-display: "Fraunces Variable", "Fraunces", ui-sans-serif, system-ui, sans-serif;
+  --rc-font-text: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --rc-font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
   --rc-text-xs: 11.375px;
   --rc-text-sm: 12.25px;
   --rc-text-base: 14px;

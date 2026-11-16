@@ -36,9 +36,13 @@ const put = (obj, path, v) => {
   for (const k of ks.slice(0, -1)) c = c[k];
   c[ks.at(-1)] = v;
 };
+// snapshot that PRESERVES reactive tracking (plain() strips the proxy via
+// toRaw before stringify — fine for writes, poison for computeds)
+const tracked = () => JSON.parse(JSON.stringify(t));
+
 const isD = (path) => dig(t, path) !== dig(baseline.value, path);
 const revert = (path) => { put(t, path, dig(baseline.value, path)); };
-const anyDirty = computed(() => JSON.stringify(plain(t)) !== JSON.stringify(baseline.value));
+const anyDirty = computed(() => JSON.stringify(tracked()) !== JSON.stringify(baseline.value));
 
 // theme switching: drafts belong to a theme; confirm before discarding
 let restoring = false;
@@ -144,7 +148,7 @@ function applyPick(kind, key, hex) {
 
 // the gate runs on the DRAFT, client-side — you can fail AA before you save, not after
 const liveReport = computed(() => {
-  try { return contrastReport(plain(t)); } catch { return contrastRows.value; }
+  try { return contrastReport(tracked()); } catch { return contrastRows.value; }
 });
 const fails = computed(() => liveReport.value.filter((r) => !r.pass));
 
