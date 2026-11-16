@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, watch, computed } from "vue";
-import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, loadFont, previewTheme, FONT_LOADERS } from "../themes.js";
+import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
 import { DEFAULT_THEME, deepMerge, rampHex, pickColor } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
 
@@ -27,16 +27,38 @@ watch(
   () => { if (!state.dirty) syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]); },
 );
 
+// ---- persistence lifecycle -------------------------------------------------
+// Preview is instant (inline vars); saves are commit-driven (slider release,
+// color-panel close, font apply) with a slow safety net for programmatic edits.
+let saving = false;
+let pending = false;
+let mutCount = 0; // bumped on every editor mutation
 let timer = null;
+
+async function saveNow() {
+  clearTimeout(timer);
+  if (saving) { pending = true; return; }
+  saving = true;
+  let lastSeen = mutCount;
+  do {
+    pending = false;
+    lastSeen = mutCount;
+    const ok = await saveTheme(plain(t));
+    if (!ok) break;
+  } while (pending); // user moved again mid-save -> persist the latest, not the stale
+  saving = false;
+  if (lastSeen === mutCount) {
+    clearPreview(); // quiet page, file CSS matches preview exactly: hand over
+    state.dirty = false;
+  }
+}
+
 function queueSave() {
   state.dirty = true;
-  // instant, reflow-free preview via inline vars on <html>; disk write follows
-  previewTheme(plain(t));
+  mutCount++;
+  previewTheme(plain(t)); // reflow-free live feedback on every input event
   clearTimeout(timer);
-  timer = setTimeout(async () => {
-    const ok = await saveTheme(plain(t));
-    if (ok) t.name = state.theme; // save may have re-materialized file
-  }, 250);
+  timer = setTimeout(saveNow, 1500); // safety net: edits with no commit signal
 }
 watch(t, () => {
   if (internalAssign) { internalAssign = false; return; }
@@ -64,6 +86,7 @@ async function setFont(slot, family) {
     // apply the token only once glyphs are real: no FOUT metric jump
     try { await loadFont(family); } catch { /* apply anyway if load fails */ }
     t.fonts[slot] = family;
+    saveNow(); // async apply has no native commit event — persist now
   } else {
     loadGoogleFont(family); // exploration path — best-effort, applies immediately
     t.fonts[slot] = family;
@@ -113,7 +136,7 @@ const fontStack = (family, kind) =>
           </span>
         </div>
         <p class="text-xs leading-relaxed mt-1" style="color: var(--rc-ink-muted)">
-          Every control edits that one file, live — swatches open a color picker, sliders fine-tune
+          Every control previews instantly and writes on release — swatches open a color picker, sliders fine-tune
           hue/chroma, and the gallery re-renders from the result. Undo any session with
           <code class="font-mono">git checkout -- themes/{{ t.name }}.tokens.json</code>.
         </p>
@@ -151,8 +174,8 @@ const fontStack = (family, kind) =>
           </div>
         </div>
         <div class="space-y-1">
-          <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5" />
-          <Slider label="ratio" :decimals="2" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001" />
+          <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5" @commit="saveNow" />
+          <Slider label="ratio" :decimals="2" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001" @commit="saveNow" />
         </div>
       </section>
 
@@ -160,11 +183,11 @@ const fontStack = (family, kind) =>
       <section class="space-y-2">
         <div class="flex items-center gap-2">
           <ColorPicker :model-value="seedHex('neutral')" shape="square" title="Pick the neutral tint — the grays follow it"
-            @update:model-value="applyPick('neutral', null, $event)" />
+            @update:model-value="applyPick('neutral', null, $event)" @commit="saveNow" />
           <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Neutrals · hue-tinted grays</h4>
         </div>
-        <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360" />
-        <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001" />
+        <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360" @commit="saveNow" />
+        <Slider label="chroma" :decimals="3" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001" @commit="saveNow" />
       </section>
 
       <!-- Accents -->
@@ -173,12 +196,12 @@ const fontStack = (family, kind) =>
         <div v-for="k in accentKeys" :key="k" class="space-y-1.5">
           <div class="flex items-center gap-2">
             <ColorPicker :model-value="seedHex('accent', k)" :title="`Pick a color for ${k}`"
-              @update:model-value="applyPick('accent', k, $event)" />
+              @update:model-value="applyPick('accent', k, $event)" @commit="saveNow" />
             <span class="font-medium capitalize">{{ k }}</span>
           </div>
           <div class="space-y-1">
-            <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360" />
-            <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005" />
+            <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360" @commit="saveNow" />
+            <Slider label="chroma" :decimals="3" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005" @commit="saveNow" />
           </div>
         </div>
       </section>
@@ -186,9 +209,9 @@ const fontStack = (family, kind) =>
       <!-- Geometry -->
       <section class="space-y-2">
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Geometry</h4>
-        <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24" />
-        <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01" />
-        <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05" />
+        <Slider label="radius" suffix="px" v-model="t.scale.radius" :min="0" :max="24" @commit="saveNow" />
+        <Slider label="density" :decimals="2" v-model="t.scale.density" :min="0.85" :max="1.2" :step="0.01" @commit="saveNow" />
+        <Slider label="shadow" :decimals="2" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05" @commit="saveNow" />
       </section>
 
       <!-- Contrast gate -->

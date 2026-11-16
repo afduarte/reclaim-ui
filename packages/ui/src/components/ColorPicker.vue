@@ -7,7 +7,7 @@ const props = defineProps({
   shape: { type: String, default: "circle" }, // circle | square
   title: { type: String, default: "Pick a color" },
 });
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "commit"]);
 </script>
 
 <template>
@@ -21,6 +21,7 @@ const emit = defineEmits(["update:modelValue"]);
       type="color"
       :value="props.modelValue"
       @input="emit('update:modelValue', $event.target.value)"
+      @change="emit('commit')"
     />
   </label>
 </template>

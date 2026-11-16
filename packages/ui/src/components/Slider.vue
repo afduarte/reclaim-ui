@@ -12,7 +12,7 @@ const props = defineProps({
   suffix: { type: String, default: "" },
   decimals: { type: Number, default: null },
 });
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "commit"]);
 
 const display = computed(() => {
   if (props.valueText != null) return props.valueText;
@@ -33,6 +33,7 @@ const display = computed(() => {
       :step="step"
       :value="Number(props.modelValue)"
       @input="emit('update:modelValue', parseFloat($event.target.value))"
+      @change="emit('commit')"
     />
   </label>
 </template>

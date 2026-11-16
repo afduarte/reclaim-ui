@@ -180,7 +180,6 @@ export async function saveTheme(tokens) {
     return false;
   }
   await refreshTheme(name);
-  clearPreview(); // regenerated file CSS now matches the preview exactly
   state.rawTokens[name] = tokens;
   state.resolved[name] = tokens;
   state.notice = `Saved themes/${name}.tokens.json`;
