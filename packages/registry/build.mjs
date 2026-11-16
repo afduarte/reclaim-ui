@@ -72,15 +72,16 @@ const CURATED_FONTS = {
   "Space Grotesk": "@fontsource-variable/space-grotesk",
   "Sora": "@fontsource-variable/sora",
   "Outfit": "@fontsource-variable/outfit",
+  "Newsreader": "@fontsource-variable/newsreader",
+  "Source Serif 4": "@fontsource-variable/source-serif-4",
   "Public Sans": "@fontsource-variable/public-sans",
   "Figtree": "@fontsource-variable/figtree",
   "Albert Sans": "@fontsource-variable/albert-sans",
   "Geist": "@fontsource-variable/geist",
-  "Source Serif 4": "@fontsource-variable/source-serif-4",
-  "Newsreader": "@fontsource-variable/newsreader",
+  "Instrument Sans": "@fontsource-variable/instrument-sans",
   "JetBrains Mono": "@fontsource-variable/jetbrains-mono",
-  "IBM Plex Mono": "@fontsource-variable/ibm-plex-mono",
-  "Fragment Mono": "@fontsource-variable/fragment-mono",
+  "Inconsolata": "@fontsource-variable/inconsolata",
+  "Victor Mono": "@fontsource-variable/victor-mono",
 };
 
 const fontWarnings = [];

@@ -2,7 +2,7 @@
 // One source of truth: themes/<name>.tokens.json. Components only read --rc-* vars.
 // NOTE: this module is browser-safe (the showcase imports it). Filesystem helpers
 // live in ./files.mjs.
-import { converter, toGamut, formatCss } from "culori";
+import { converter, toGamut, formatCss, parse } from "culori";
 
 // ---------------------------------------------------------------------------
 // Ramp model: 11 steps (50..950) on a fixed OKLCH lightness curve.
@@ -21,6 +21,23 @@ function rampColor(hue, chroma, idx, { lightnessScale = 1 } = {}) {
   const c = chroma * C_PROFILE[idx];
   const h = chroma <= 0.0015 ? hue : hue; // hue still steers tint even for near-gray
   return formatCss(toSrgb({ mode: "oklch", l, c, h }));
+}
+
+/** #rrggbb of a ramp step — lets UIs show/seed color pickers from hue+chroma. */
+export function rampHex(hue, chroma, idx) {
+  const c = toSrgb({ mode: "oklch", l: L_CURVE[idx], c: chroma * C_PROFILE[idx], h: hue });
+  const hex = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0");
+  return `#${hex(c.r)}${hex(c.g)}${hex(c.b)}`;
+}
+
+/** Reverse map a picked hex onto ramp parameters. chromaScale < 1 for neutrals. */
+export function pickColor(hex, chromaScale = 1) {
+  const c = converter("oklch")(parse(hex));
+  if (!c) return { hue: 0, chroma: 0 };
+  return {
+    hue: Math.round((c.hue ?? 0) + 360) % 360,
+    chroma: round((c.chroma ?? 0) * chromaScale),
+  };
 }
 
 function rampVars(prefix, hue, chroma) {

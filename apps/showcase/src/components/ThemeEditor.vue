@@ -1,18 +1,14 @@
 <script setup>
 import { reactive, ref, watch, computed } from "vue";
-import { state, workingTheme, contrastRows, saveTheme, plain } from "../themes.js";
-import { DEFAULT_THEME, deepMerge } from "@reclaim/tokens";
+import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, FONT_LOADERS } from "../themes.js";
+import { DEFAULT_THEME, deepMerge, rampHex, pickColor } from "@reclaim/tokens";
 import { Button } from "@reclaim/ui";
 
 const emit = defineEmits(["fork"]);
 defineProps({ forking: Boolean });
 const forkName = defineModel("forkName", { type: String, default: "" });
 
-const CURATED_FONTS = [
-  "Fraunces", "Archivo", "Bricolage Grotesque", "Space Grotesk", "Sora", "Outfit",
-  "Public Sans", "Figtree", "Albert Sans", "Geist", "Source Serif 4", "Newsreader",
-  "JetBrains Mono", "IBM Plex Mono", "Fragment Mono",
-];
+const CURATED_FONTS = Object.keys(FONT_LOADERS);
 
 // local editable mirror: defaults <- raw file <- resolved (as it arrives)
 const t = reactive(deepMerge(DEFAULT_THEME, workingTheme.value));
@@ -48,13 +44,35 @@ function loadGoogleFont(family) {
   const link = document.createElement("link");
   link.id = id;
   link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:ital,opsz,wght@0,9..144,300..900&display=swap`;
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@300..900&display=swap`;
+  link.onerror = () => {
+    link.remove();
+    state.notice = `Google Font "${family}" failed to load (check name / network)`;
+  };
   document.head.appendChild(link);
 }
 
 function setFont(slot, family) {
-  if (family && !CURATED_FONTS.includes(family)) loadGoogleFont(family);
+  if (!family) return;
+  if (CURATED_FONTS.includes(family)) ensureFonts({ fonts: { [slot]: family } });
+  else loadGoogleFont(family);
   t.fonts[slot] = family;
+}
+
+// color pickers: click the swatch -> OS panel -> reverse-map hex to hue+chroma
+function seedHex(kind, key) {
+  const spec = kind === "neutral" ? t.color.neutral : t.color.accents[key];
+  return rampHex(spec?.hue ?? 0, spec?.chroma ?? 0, 6); // step 600
+}
+function applyPick(kind, key, hex) {
+  const { hue, chroma } = pickColor(hex, kind === "neutral" ? 0.3 : 1);
+  if (kind === "neutral") {
+    t.color.neutral.hue = hue;
+    t.color.neutral.chroma = Math.min(0.035, chroma);
+  } else {
+    t.color.accents[key].hue = hue;
+    t.color.accents[key].chroma = Math.min(0.28, chroma);
+  }
 }
 
 const freeText = reactive({ display: "", text: "", mono: "" });
@@ -76,6 +94,11 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
         themes/{{ t.name }}.tokens.json{{ state.dirty ? " · writing" : "" }}
       </span>
     </div>
+    <p class="text-xs leading-relaxed" style="color: var(--rc-ink-muted)">
+      Everything here edits that one file, live — swatches open a color picker, sliders fine-tune
+      hue/chroma, and the gallery re-renders from the result. Undo any session with
+      <code class="font-mono">git checkout -- themes/{{ t.name }}.tokens.json</code>.
+    </p>
     <p v-if="state.notice" class="text-xs font-mono" style="color: var(--rc-success)">{{ state.notice }}</p>
 
     <!-- Type -->
@@ -108,6 +131,12 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
     <!-- Neutrals -->
     <fieldset class="space-y-2">
       <legend class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Neutrals (hue-tinted grays)</legend>
+      <label class="relative inline-block size-6 rounded-rc-sm border border-line cursor-pointer align-middle mr-2"
+        style="background: var(--rc-neutral-600)" title="Pick the neutral tint — the grays follow it">
+        <input type="color" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          :value="seedHex('neutral')" @input="applyPick('neutral', null, $event.target.value)" />
+      </label>
+      <span class="text-xs align-middle" style="color:var(--rc-ink-muted)">swatch = click to pick tint</span>
       <label class="block">
         <span class="font-mono text-xs" style="color:var(--rc-ink-muted)">hue {{ t.color.neutral.hue }}°</span>
         <input type="range" min="0" max="360" v-model.number="t.color.neutral.hue" class="w-full rc-check-native !h-auto" />
@@ -123,7 +152,11 @@ const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
       <legend class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Accents</legend>
       <div v-for="k in accentKeys" :key="k" class="space-y-1.5">
         <div class="flex items-center gap-2">
-          <span class="size-3 rounded-full border border-line" :style="{ background: `var(--rc-${k}-600)` }" />
+          <label class="relative inline-block size-4 rounded-full border border-line cursor-pointer"
+            :style="{ background: `var(--rc-${k}-600)` }" :title="`Pick a color for ${k}`">
+            <input type="color" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              :value="seedHex('accent', k)" @input="applyPick('accent', k, $event.target.value)" />
+          </label>
           <span class="font-medium capitalize">{{ k }}</span>
         </div>
         <div class="grid grid-cols-2 gap-2">

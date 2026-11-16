@@ -5,6 +5,37 @@ import { reactive, computed, watch, toRaw } from "vue";
 /** Proxy-safe deep clone (structuredClone refuses reactive Proxies). */
 export const plain = (v) => (v == null ? v : JSON.parse(JSON.stringify(toRaw(v))));
 
+// Curated "ship" fonts, lazy-loaded when a theme actually uses them.
+// Keys must match the family names stored in theme.fonts.
+export const FONT_LOADERS = {
+  "Fraunces": () => import("@fontsource-variable/fraunces/index.css"),
+  "Archivo": () => import("@fontsource-variable/archivo/index.css"),
+  "Bricolage Grotesque": () => import("@fontsource-variable/bricolage-grotesque/index.css"),
+  "Space Grotesk": () => import("@fontsource-variable/space-grotesk/index.css"),
+  "Sora": () => import("@fontsource-variable/sora/index.css"),
+  "Outfit": () => import("@fontsource-variable/outfit/index.css"),
+  "Newsreader": () => import("@fontsource-variable/newsreader/index.css"),
+  "Source Serif 4": () => import("@fontsource-variable/source-serif-4/index.css"),
+  "Public Sans": () => import("@fontsource-variable/public-sans/index.css"),
+  "Figtree": () => import("@fontsource-variable/figtree/index.css"),
+  "Albert Sans": () => import("@fontsource-variable/albert-sans/index.css"),
+  "Geist": () => import("@fontsource-variable/geist/index.css"),
+  "Instrument Sans": () => import("@fontsource-variable/instrument-sans/index.css"),
+  "JetBrains Mono": () => import("@fontsource-variable/jetbrains-mono/index.css"),
+  "Inconsolata": () => import("@fontsource-variable/inconsolata/index.css"),
+  "Victor Mono": () => import("@fontsource-variable/victor-mono/index.css"),
+};
+const loadedFonts = new Set();
+export function ensureFonts(theme) {
+  for (const family of Object.values(theme?.fonts ?? {})) {
+    if (!family || loadedFonts.has(family)) continue;
+    const loader = FONT_LOADERS[family];
+    if (!loader) continue; // external/Google font — loaded via <link> by the editor
+    loadedFonts.add(family);
+    loader().catch(() => loadedFonts.delete(family));
+  }
+}
+
 const cssModules = import.meta.glob("../../../themes/*.rc.css", {
   query: "?raw",
   import: "default",
@@ -70,7 +101,10 @@ async function refreshTheme(name) {
       state.css[name] = css;
       inject(name, css);
     }
-    if (resolved) state.resolved[name] = resolved;
+    if (resolved) {
+      state.resolved[name] = resolved;
+      ensureFonts(resolved);
+    }
     if (report) state.reports[name] = report.rows;
   } catch {
     /* dev-only endpoints; static glob data remains usable */
@@ -93,7 +127,10 @@ export async function setTheme(name) {
 }
 
 export async function initAll() {
-  for (const n of themeNames.value) await refreshTheme(n);
+  for (const n of themeNames.value) {
+    ensureFonts(state.rawTokens[n]);
+    await refreshTheme(n);
+  }
   applyThemeAttrs();
 }
 
