@@ -26,8 +26,9 @@ async function doFork(draft) {
 
 <template>
   <div class="min-h-dvh bg-canvas text-ink">
+    <!-- top bar spans the true page width; nothing is centered in a phantom column -->
     <header class="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
-      <div class="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
+      <div class="flex items-center gap-4 px-5 py-3">
         <strong class="text-lg leading-none" style="font-family: var(--rc-font-display)">Reclaim&nbsp;Studio</strong>
         <span class="font-mono text-xs" style="color: var(--rc-ink-muted)">@reclaim/{{ state.theme }}</span>
 
@@ -56,14 +57,18 @@ async function doFork(draft) {
       </div>
     </header>
 
-    <div class="mx-auto flex max-w-7xl gap-8 px-6 py-8 items-start">
-      <aside v-if="editorOpen" class="w-80 shrink-0 sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
+    <!-- dock layout: editor flush left, gallery takes the rest -->
+    <div class="flex items-start gap-8 px-5 py-6">
+      <aside v-if="editorOpen" class="w-96 shrink-0 sticky top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
         <ThemeEditor @fork="doFork" :forking="forking" v-model:forkName="forkName" />
       </aside>
 
       <main class="flex-1 min-w-0">
-        <Specimens v-if="view === 'specimens'" />
-        <Compositions v-else />
+        <!-- single column look, capped measure — the width is used, not wasted -->
+        <div class="max-w-4xl">
+          <Specimens v-if="view === 'specimens'" />
+          <Compositions v-else />
+        </div>
       </main>
     </div>
   </div>
