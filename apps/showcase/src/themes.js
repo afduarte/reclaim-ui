@@ -74,8 +74,17 @@ export const state = reactive({
   resolved: {},
   /** name -> contrast report rows */
   reports: {},
+  /** current unsaved draft (published by the editor for Compare/Checks views) */
+  draft: null,
+  /** one-click fix awaiting adoption by the editor */
+  pendingPatch: null,
   notice: "",
 });
+
+/** Checks view requests a fix; the editor adopts it into the draft. */
+export function requestPatch(patch) {
+  state.pendingPatch = patch;
+}
 
 export const themeNames = computed(() => Object.keys(state.css).sort());
 
@@ -154,6 +163,7 @@ export const contrastRows = computed(() => state.reports[state.theme] ?? []);
 
 export async function setTheme(name) {
   state.theme = name;
+  state.draft = null;
   clearPreview();
   applyThemeAttrs();
   await refreshTheme(name);

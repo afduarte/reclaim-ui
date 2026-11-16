@@ -4,6 +4,8 @@ import { state, themeNames, setTheme, initAll, forkTheme } from "./themes.js";
 import { Button, Select } from "@reclaim/ui";
 import Specimens from "./views/Specimens.vue";
 import Compositions from "./views/Compositions.vue";
+import Checks from "./views/Checks.vue";
+import Compare from "./views/Compare.vue";
 import ThemeEditor from "./components/ThemeEditor.vue";
 
 const view = ref("specimens");
@@ -34,7 +36,7 @@ async function doFork(draft) {
 
         <nav class="ml-6 flex gap-1">
           <Button
-            v-for="v in ['specimens', 'compositions']"
+            v-for="v in ['specimens', 'compositions', 'checks', 'compare']"
             :key="v"
             size="sm"
             :variant="view === v ? 'soft' : 'ghost'"
@@ -59,15 +61,18 @@ async function doFork(draft) {
 
     <!-- dock layout: editor flush left, gallery takes the rest -->
     <div class="flex items-start gap-8 px-5 py-6">
-      <aside v-if="editorOpen" class="w-[440px] shrink-0 sticky top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
+      <!-- kept mounted (v-show) so it can adopt Checks-view patches even when hidden -->
+      <aside v-show="editorOpen" class="w-[440px] shrink-0 sticky top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
         <ThemeEditor @fork="doFork" :forking="forking" v-model:forkName="forkName" />
       </aside>
 
       <main class="flex-1 min-w-0">
-        <!-- single column look, capped measure — the width is used, not wasted -->
-        <div class="max-w-4xl">
+        <!-- measure cap for reading views; Compare goes full-bleed — two panes need the room -->
+        <div :class="view === 'compare' ? '' : 'max-w-4xl'">
           <Specimens v-if="view === 'specimens'" />
-          <Compositions v-else />
+          <Compositions v-else-if="view === 'compositions'" />
+          <Checks v-else-if="view === 'checks'" />
+          <Compare v-else />
         </div>
       </main>
     </div>

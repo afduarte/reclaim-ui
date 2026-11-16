@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref, watch, computed } from "vue";
 import { state, workingTheme, contrastRows, saveTheme, setTheme, plain, ensureFonts, loadFont, previewTheme, clearPreview, FONT_LOADERS } from "../themes.js";
-import { DEFAULT_THEME, deepMerge, rampHex, pickColor, contrastReport } from "@reclaim/tokens";
+import { DEFAULT_THEME, deepMerge, rampHex, pickColor, contrastReport, deriveFromBrand, rollPalette, suggestFontPairings } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
 
 const emit = defineEmits(["fork"]);
@@ -88,8 +88,20 @@ watch(
 // ---- preview on every edit; persistence is deliberate -----------------------
 watch(t, () => {
   if (internalAssign) { internalAssign = false; return; }
+  state.draft = plain(t);
   previewTheme(plain(t));
 }, { deep: true });
+
+// adopt one-click fixes requested by the Checks view
+watch(
+  () => state.pendingPatch,
+  (p) => {
+    if (!p) return;
+    put(t, p.path, p.to);
+    state.pendingPatch = null;
+    state.notice = `applied: ${p.why}`;
+  },
+);
 
 async function saveDraft() {
   const ok = await saveTheme(plain(t));
@@ -136,6 +148,9 @@ function applyFreeFont(slot) {
   freeText[slot] = "";
 }
 
+// pairing chips: ranked candidates for each slot given the other two, with reasons
+const pairings = computed(() => suggestFontPairings(tracked()));
+
 // ---- color pickers -----------------------------------------------------------
 const seedHex = (kind, key) => {
   const spec = kind === "neutral" ? t.color.neutral : t.color.accents[key];
@@ -156,6 +171,35 @@ function applyPick(kind, key, hex) {
 const liveReport = computed(() => {
   try { return contrastReport(tracked()); } catch { return contrastRows.value; }
 });
+// ---- gradient tracks ---------------------------------------------------------
+function hueGrad(chroma) {
+  const stops = [];
+  for (let a = 0; a <= 360; a += 30) stops.push(rampHex(a, chroma, 6));
+  return `linear-gradient(to right, ${stops.join(", ")})`;
+}
+function chromaGrad(hue, maxC) {
+  const stops = [];
+  for (let i = 0; i <= 10; i++) stops.push(rampHex(hue, (i / 10) * maxC, 6));
+  return `linear-gradient(to right, ${stops.join(", ")})`;
+}
+
+// ---- derive / roll -------------------------------------------------------------
+function deriveRest() {
+  const b = t.color.accents.brand;
+  const { accents, neutral } = deriveFromBrand(b.hue, b.chroma);
+  for (const k of ["success", "warn", "danger"]) if (t.color.accents[k]) Object.assign(t.color.accents[k], accents[k]);
+  Object.assign(t.color.neutral, neutral);
+  state.notice = "derived status + neutral from brand";
+}
+const rollSeed = ref(String(Math.floor(Math.random() * 99999)));
+function roll() {
+  const r = rollPalette(Number(rollSeed.value) || (Date.now() & 0xffff));
+  Object.assign(t.color.neutral, r.color.neutral);
+  t.color.canvas = null;
+  for (const k of Object.keys(r.color.accents)) if (t.color.accents[k]) Object.assign(t.color.accents[k], r.color.accents[k]);
+  state.notice = `rolled ${r.scheme} tint — seed ${r.seed}`;
+}
+
 const fails = computed(() => liveReport.value.filter((r) => !r.pass));
 
 // don't let a refresh eat the draft
@@ -210,6 +254,14 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
             <Input v-model="freeText[slot]" placeholder="try any Google Font…" size="sm" @keyup.enter="applyFreeFont(slot)" />
             <Button size="sm" variant="ghost" @click="applyFreeFont(slot)">load</Button>
           </div>
+          <div class="flex gap-1.5 items-center flex-wrap">
+            <span class="font-mono text-xs" style="color:var(--rc-ink-faint)">pairs:</span>
+            <Button
+              v-for="p in pairings[slot]" :key="p.family"
+              size="sm" variant="ghost" :title="p.reasons.join(' · ')"
+              @click="setFont(slot, p.family)"
+            >{{ p.family }} <span class="font-mono ml-1" style="color: var(--rc-ink-faint)">{{ p.score }}</span></Button>
+          </div>
         </div>
         <div class="space-y-1">
           <Slider label="size" suffix="px" v-model="t.type.base" :min="14" :max="19" :step="0.5"
@@ -243,8 +295,10 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Neutrals · hue-tinted grays</h4>
         </div>
         <Slider label="hue" suffix="°" v-model="t.color.neutral.hue" :min="0" :max="360"
+          :track-gradient="hueGrad(t.color.neutral.chroma)"
           :dirty="isD('color.neutral.hue')" @revert="revert('color.neutral.hue')" />
         <Slider label="chroma" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
+          :track-gradient="chromaGrad(t.color.neutral.hue, 0.035)"
           :dirty="isD('color.neutral.chroma')" @revert="revert('color.neutral.chroma')" />
         <Slider v-if="adv" label="contrast curve" v-model="t.ramps.contrast" :min="0.7" :max="1.3" :step="0.01"
           :dirty="isD('ramps.contrast')" @revert="revert('ramps.contrast')" />
@@ -259,8 +313,10 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         </label>
         <template v-if="t.color.canvas">
           <Slider label="paper hue" suffix="°" v-model="t.color.canvas.hue" :min="0" :max="360"
+            :track-gradient="hueGrad(t.color.canvas.chroma)"
             :dirty="isD('color.canvas.hue')" @revert="revert('color.canvas.hue')" />
           <Slider label="paper chroma" v-model="t.color.canvas.chroma" :min="0" :max="0.05" :step="0.002"
+            :track-gradient="chromaGrad(t.color.canvas.hue, 0.05)"
             :dirty="isD('color.canvas.chroma')" @revert="revert('color.canvas.chroma')" />
         </template>
         <Slider label="surface lift" v-model="t.mapping.surfaceLift" :min="0" :max="4" :step="1"
@@ -277,7 +333,16 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
 
       <!-- Accents -->
       <section class="space-y-3">
-        <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Accents</h4>
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Accents</h4>
+          <div class="flex items-center gap-1.5">
+            <Input v-model="rollSeed" size="sm" placeholder="seed" class="w-20" />
+            <Button size="sm" variant="ghost" @click="roll">Roll</Button>
+          </div>
+        </div>
+        <Button size="sm" variant="outline" class="w-full" @click="deriveRest">
+          Derive status + neutral from brand
+        </Button>
         <div v-for="k in accentKeys" :key="k" class="space-y-1.5">
           <div class="flex items-center gap-2">
             <ColorPicker :model-value="seedHex('accent', k)" :title="`Pick a color for ${k}`"
@@ -288,8 +353,10 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           </div>
           <div class="space-y-1">
             <Slider label="hue" suffix="°" v-model="t.color.accents[k].hue" :min="0" :max="360"
+              :track-gradient="hueGrad(t.color.accents[k].chroma)"
               :dirty="isD(`color.accents.${k}.hue`)" @revert="revert(`color.accents.${k}.hue`)" />
             <Slider label="chroma" v-model="t.color.accents[k].chroma" :min="0" :max="0.28" :step="0.005"
+              :track-gradient="chromaGrad(t.color.accents[k].hue, 0.28)"
               :dirty="isD(`color.accents.${k}.chroma`)" @revert="revert(`color.accents.${k}.chroma`)" />
           </div>
         </div>

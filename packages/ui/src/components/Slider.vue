@@ -7,6 +7,7 @@ const props = defineProps({
   label: { type: String, default: null },
   suffix: { type: String, default: "" },
   dirty: { type: Boolean, default: false }, // differs from session baseline
+  trackGradient: { type: String, default: null }, // CSS background for the track
 });
 const emit = defineEmits(["update:modelValue", "commit", "revert"]);
 
@@ -47,6 +48,7 @@ const set = (raw) => {
       type="range"
       class="rc-range"
       :aria-label="label"
+      :style="trackGradient ? { '--range-bg': trackGradient } : null"
       :min="min"
       :max="max"
       :step="step"

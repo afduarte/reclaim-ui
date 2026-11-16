@@ -129,6 +129,19 @@
 }
 .rc-btn--ghost:hover:not(:disabled) { --_fg: var(--rc-ink); }
 
+/* forced interaction states — for galleries/compare panes where hover can't
+   reach two places at once. Mirrors the real pseudo-class output exactly. */
+.rc-btn.is-hover { background: var(--_bg-hover); }
+.rc-btn.is-active { background: var(--_bg-hover); transform: translateY(1px); }
+.rc-btn.is-focus { outline: 2px solid var(--rc-ring-soft); outline-offset: 2px; }
+.rc-input.is-hover { border-color: var(--rc-line-strong); }
+.rc-input.is-focus {
+  outline: 3px solid var(--rc-ring-soft);
+  outline-offset: -1px;
+  border-color: var(--rc-ring);
+}
+.rc-table tbody tr.is-hover { background: var(--rc-surface-2); }
+
 .rc-btn--icon {
   width: var(--rc-control-h);
   padding-inline: 0;
@@ -285,6 +298,44 @@
   height: 1.375rem;
   accent-color: var(--rc-brand-solid);
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+.rc-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--range-bg, var(--rc-surface-2));
+  border: 1px solid var(--rc-line);
+}
+.rc-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--rc-canvas);
+  border: 2px solid var(--rc-line-strong);
+  box-shadow: var(--rc-shadow-1);
+}
+.rc-range::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--range-bg, var(--rc-surface-2));
+  border: 1px solid var(--rc-line);
+}
+.rc-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--rc-canvas);
+  border: 2px solid var(--rc-line-strong);
+  box-shadow: var(--rc-shadow-1);
+}
+.rc-range:focus-visible {
+  outline: 2px solid var(--rc-ring-soft);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .rc-slider {
