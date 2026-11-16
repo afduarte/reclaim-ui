@@ -289,24 +289,23 @@
 
 .rc-slider {
   display: flex;
+  flex-direction: column;
+  gap: calc(var(--rc-space) * 0.5);
+}
+.rc-slider__head {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: calc(var(--rc-space) * 3);
+  gap: calc(var(--rc-space) * 2);
 }
-.rc-slider__label {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(var(--rc-space) * 1.5);
-  flex: 0 0 6.25rem;
+.rc-slider__name {
   font-family: var(--rc-font-mono);
   font-size: var(--rc-text-xs);
   color: var(--rc-ink-muted);
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
-.rc-slider__value { color: var(--rc-ink); font-weight: 550; }
-.rc-slider input[type="range"] { flex: 1; min-width: 0; }
+.rc-slider__controls { display: inline-flex; align-items: center; gap: calc(var(--rc-space) * 1.5); }
+.rc-slider--dirty .rc-slider__name { color: var(--rc-warn); }
 
 .rc-swatch {
   position: relative;

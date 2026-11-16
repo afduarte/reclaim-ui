@@ -59,7 +59,7 @@ async function doFork(draft) {
 
     <!-- dock layout: editor flush left, gallery takes the rest -->
     <div class="flex items-start gap-8 px-5 py-6">
-      <aside v-if="editorOpen" class="w-96 shrink-0 sticky top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
+      <aside v-if="editorOpen" class="w-[440px] shrink-0 sticky top-[4.5rem] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain">
         <ThemeEditor @fork="doFork" :forking="forking" v-model:forkName="forkName" />
       </aside>
 

@@ -18,22 +18,31 @@ const set = (raw) => {
 
 <template>
   <div class="rc-slider" :class="{ 'rc-slider--dirty': dirty }">
-    <span class="rc-slider__label">
-      {{ label }}
-      <span class="rc-slider__valuebox">
-        <input
-          class="rc-slider__num"
-          type="number"
-          :min="min"
-          :max="max"
-          :step="step"
-          :value="Number(props.modelValue)"
-          @input="set($event.target.value)"
-          @change="emit('commit')"
-        />
-        <span v-if="suffix" class="rc-slider__suffix">{{ suffix }}</span>
+    <div v-if="label || dirty" class="rc-slider__head">
+      <span class="rc-slider__name">{{ label }}</span>
+      <span class="rc-slider__controls">
+        <span class="rc-slider__valuebox">
+          <input
+            class="rc-slider__num"
+            type="number"
+            :min="min"
+            :max="max"
+            :step="step"
+            :value="Number(props.modelValue)"
+            @input="set($event.target.value)"
+            @change="emit('commit')"
+          />
+          <span v-if="suffix" class="rc-slider__suffix">{{ suffix }}</span>
+        </span>
+        <button
+          v-if="dirty"
+          class="rc-revert"
+          type="button"
+          title="Revert to session baseline"
+          @click.prevent="emit('revert')"
+        >↺</button>
       </span>
-    </span>
+    </div>
     <input
       type="range"
       class="rc-range"
@@ -45,12 +54,5 @@ const set = (raw) => {
       @input="set($event.target.value)"
       @change="emit('commit')"
     />
-    <button
-      v-if="dirty"
-      class="rc-revert"
-      type="button"
-      title="Revert to session baseline"
-      @click.prevent="emit('revert')"
-    >↺</button>
   </div>
 </template>
