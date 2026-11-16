@@ -6,50 +6,49 @@ import { converter, toGamut, formatCss, parse } from "culori";
 
 // ---------------------------------------------------------------------------
 // Ramp model: 11 steps (50..950) on a fixed OKLCH lightness curve.
-// Themes tune hue + chroma; the curve keeps every ramp AA-legible by design.
+// Themes tune hue + chroma (+ contrast curve in advanced mode); the curve
+// keeps every ramp AA-legible by design.
 // ---------------------------------------------------------------------------
 export const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 const L_CURVE = [0.985, 0.962, 0.93, 0.885, 0.82, 0.745, 0.655, 0.525, 0.415, 0.3, 0.165];
-// chroma profile: peaks in the middle, low at the paper/ink ends
 const C_PROFILE = [0.3, 0.55, 0.75, 0.88, 0.97, 1.0, 1.0, 0.92, 0.78, 0.6, 0.42];
+const L_MID = 0.55; // contrast curve pivots around this lightness
 
 const toSrgb = toGamut("rgb", "oklch");
+const round = (x) => Math.round(x * 1000) / 1000;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-/** @returns {string} oklch() sRGB-clamped color for a step of the ramp */
-function rampColor(hue, chroma, idx, { lightnessScale = 1 } = {}) {
-  const l = Math.min(0.994, L_CURVE[idx] * lightnessScale);
+function rampColor(hue, chroma, idx, contrast = 1) {
+  const l = clamp(L_MID + (L_CURVE[idx] - L_MID) * contrast, 0.02, 0.994);
   const c = chroma * C_PROFILE[idx];
-  const h = chroma <= 0.0015 ? hue : hue; // hue still steers tint even for near-gray
-  return formatCss(toSrgb({ mode: "oklch", l, c, h }));
+  return formatCss(toSrgb({ mode: "oklch", l, c, h: hue }));
 }
 
-/** #rrggbb of a ramp step — lets UIs show/seed color pickers from hue+chroma. */
-export function rampHex(hue, chroma, idx) {
-  const c = toSrgb({ mode: "oklch", l: L_CURVE[idx], c: chroma * C_PROFILE[idx], h: hue });
-  const hex = (v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0");
-  return `#${hex(c.r)}${hex(c.g)}${hex(c.b)}`;
-}
-
-/** Reverse map a picked hex onto ramp parameters. chromaScale < 1 for neutrals. */
-export function pickColor(hex, chromaScale = 1) {
-  const c = converter("oklch")(parse(hex));
-  if (!c) return { hue: 0, chroma: 0 };
-  return {
-    hue: Math.round((c.h ?? 0) + 360) % 360,
-    chroma: round((c.c ?? 0) * chromaScale),
-  };
-}
-
-function rampVars(prefix, hue, chroma) {
+function rampVars(prefix, hue, chroma, contrast) {
   const out = {};
   STEPS.forEach((step, i) => {
-    out[`--rc-${prefix}-${step}`] = rampColor(hue, chroma, i);
+    out[`--rc-${prefix}-${step}`] = rampColor(hue, chroma, i, contrast);
   });
   return out;
 }
 
+/** Every ramp the theme needs: neutral, accents, and paper when overridden. */
+export function allRampVars(theme) {
+  const k = theme.ramps?.contrast ?? 1;
+  const vars = {};
+  Object.assign(vars, rampVars("neutral", theme.color.neutral.hue, theme.color.neutral.chroma, k));
+  if (theme.color.canvas) {
+    Object.assign(vars, rampVars("paper", theme.color.canvas.hue, theme.color.canvas.chroma, k));
+  }
+  for (const [key, spec] of Object.entries(theme.color.accents)) {
+    Object.assign(vars, rampVars(key, spec.hue, spec.chroma, k));
+  }
+  return vars;
+}
+
 // ---------------------------------------------------------------------------
-// Schema defaults. Themes only need to state what differs.
+// Schema defaults. Themes only need to state what differs. Advanced groups
+// default to the historical behavior, so existing themes are unaffected.
 // ---------------------------------------------------------------------------
 export const DEFAULT_THEME = {
   name: "base",
@@ -61,6 +60,7 @@ export const DEFAULT_THEME = {
   },
   color: {
     neutral: { hue: 264, chroma: 0.011 },
+    canvas: null, // { hue, chroma } -> independent paper ramp for backgrounds
     accents: {
       brand: { hue: 264, chroma: 0.165 },
       success: { hue: 155, chroma: 0.13 },
@@ -68,8 +68,43 @@ export const DEFAULT_THEME = {
       danger: { hue: 25, chroma: 0.18 },
     },
   },
-  scale: { radius: 10, density: 1, shadow: 0.65 },
-  type: { base: 16, ratio: 1.2, trackingHeading: -0.015 },
+  ramps: { contrast: 1 }, // <1 softer, >1 punchier (stretches L around midpoint)
+  mapping: {
+    surfaceLift: 1, // steps from canvas to surface (surface-2 = 2x)
+    borderStep: 3, // neutral index for hairlines (3 -> 300; strong = +1)
+    inkStep: 950, // neutral step for body ink (800 | 900 | 950)
+    solidStep: 700, // accent step for solid buttons (vivid: 500-600 w/ dark ink)
+    ringAlpha: 0.45,
+  },
+  type: {
+    base: 16,
+    ratio: 1.2,
+    trackingHeading: -0.015,
+    lineHeightBody: 1.55,
+    lineHeightHeading: 1.12,
+    weightHeading: 600,
+    weightUI: 550,
+    smallScale: 0.875, // xs/sm anchor relative to base
+  },
+  scale: {
+    radius: 10,
+    density: 1,
+    shadow: 0.65,
+    controlH: 36, // px at density 1, independent of spacing
+    spaceUnit: 4, // px at density 1
+    radiusSpread: 1, // how far sm/lg/xl fan out from the base radius
+    shadowHue: 264,
+    shadowChroma: 0, // >0 gives tinted ambient shadows
+    motion: 1, // duration multiplier for component transitions
+  },
+  dark: {
+    canvasLift: 0, // raise dark canvas off 950 toward charcoal (0-3 steps)
+  },
+  components: {
+    tableCase: "uppercase", // uppercase | none
+    badgePill: true,
+    cardBorder: true,
+  },
 };
 
 export function deepMerge(base, over) {
@@ -103,33 +138,44 @@ export function sparsePatch(full, parent) {
 
 // ---------------------------------------------------------------------------
 // Semantic layer: the only vars components are allowed to reference.
-// Mapping is identical in light/dark except the index flips and fg inverts.
 // ---------------------------------------------------------------------------
 function semanticVars(theme, mode) {
   const light = mode === "light";
+  const map = theme.mapping ?? {};
+  const lift = map.surfaceLift ?? 1;
+  const border = map.borderStep ?? 3;
+  const inkStep = String(map.inkStep ?? 950);
+  const solidStep = Number(map.solidStep ?? 700);
+  const solidHover = Math.min(900, solidStep + 100);
+  const paperName = theme.color.canvas ? "paper" : "neutral";
   const n = (step) => `var(--rc-neutral-${step})`;
+  const p = (idx) => `var(--rc-${paperName}-${STEPS[clamp(idx, 0, 10)]})`;
   const a = (key, step) => `var(--rc-${key}-${step})`;
   const pick = (l, d) => (light ? l : d);
+  // vivid solids (500-600) need dark ink; deep solids (700+) need light ink
+  const solidInk = solidStep >= 650 ? n(50) : n(950);
+  const darkLift = theme.dark?.canvasLift ?? 0;
+  const canvasIdx = light ? 0 : 10 - darkLift;
+
   const vars = {
-    "--rc-canvas": pick(n(50), n(950)),
-    "--rc-surface": pick(n(100), n(900)),
-    "--rc-surface-2": pick(n(200), n(800)),
-    "--rc-line": pick(n(300), n(700)),
-    "--rc-line-strong": pick(n(400), n(600)),
-    "--rc-ink": pick(n(950), n(50)),
+    "--rc-canvas": p(canvasIdx),
+    "--rc-surface": p(light ? Math.min(9, lift) : canvasIdx - 1),
+    "--rc-surface-2": p(light ? Math.min(9, lift * 2) : canvasIdx - 2),
+    "--rc-line": n(STEPS[clamp(light ? border : canvasIdx - border, 0, 10)]),
+    "--rc-line-strong": n(STEPS[clamp(light ? border + 1 : canvasIdx - border - 1, 0, 10)]),
+    "--rc-ink": pick(n(inkStep), n(50)),
     "--rc-ink-muted": pick(n(800), n(300)),
-    "--rc-ink-faint": pick(n(500), n(500)),
+    "--rc-ink-faint": n(500),
     "--rc-ring": a("brand", pick(600, 500)),
-    "--rc-ring-soft": "color-mix(in oklab, var(--rc-ring) 45%, transparent)",
-    "--rc-link": pick(a("brand", 700), a("brand", 400)),
-    // status defaults used by badges/inputs
+    "--rc-ring-soft": "color-mix(in oklab, var(--rc-ring) calc(var(--rc-ring-alpha) * 100%), transparent)",
+    "--rc-ring-alpha": `${map.ringAlpha ?? 0.45}`,
     "--rc-focus-alpha": "0.45",
   };
   for (const key of Object.keys(theme.color.accents)) {
     vars[`--rc-${key}`] = a(key, pick(700, 300)); // text/links
-    vars[`--rc-${key}-solid`] = a(key, pick(700, 600));
-    vars[`--rc-${key}-solid-hover`] = a(key, pick(800, 500));
-    vars[`--rc-${key}-solid-ink`] = pick(n(50), n(950));
+    vars[`--rc-${key}-solid`] = a(key, pick(solidStep, Math.max(400, solidStep - 100)));
+    vars[`--rc-${key}-solid-hover`] = a(key, pick(solidHover, Math.max(400, solidStep - 200)));
+    vars[`--rc-${key}-solid-ink`] = light ? solidInk : pick(n(50), n(950));
     vars[`--rc-${key}-soft`] = a(key, pick(100, 900));
     vars[`--rc-${key}-soft-ink`] = a(key, pick(800, 200));
     vars[`--rc-${key}-border`] = a(key, pick(300, 700));
@@ -142,43 +188,58 @@ function semanticVars(theme, mode) {
 // Type + geometry
 // ---------------------------------------------------------------------------
 function scaleVars(theme) {
-  const { radius, density, shadow } = theme.scale;
-  const { base, ratio, trackingHeading } = theme.type;
-  const t = (exp) => `${round(base * Math.pow(ratio, exp))}px`;
-  // "@fontsource-variable/*" registers families as "<Name> Variable"; plain and
-  // Google-loaded names match the bare name. Stacking both makes every source work.
-  const stack = (f, generic) => `"${f} Variable", "${f}", ${generic}`;
+  const s = theme.scale;
+  const ty = theme.type;
+  const comp = theme.components ?? {};
+  const spread = s.radiusSpread ?? 1;
+  const small = ty.smallScale ?? 0.875;
+  const t = (exp) => `${round(ty.base * Math.pow(ty.ratio, exp))}px`;
+  const shadowInk = `oklch(0.22 ${(s.shadowChroma ?? 0)} ${(s.shadowHue ?? 264)})`;
+  const mix = (pct) =>
+    `color-mix(in oklab, var(--rc-shadow-ink) calc(${pct} * var(--rc-shadow-strength)), transparent)`;
   const vars = {
-    "--rc-font-display": stack(theme.fonts.display, "ui-sans-serif, system-ui, sans-serif"),
-    "--rc-font-text": stack(theme.fonts.text, "ui-sans-serif, system-ui, sans-serif"),
-    "--rc-font-mono": stack(theme.fonts.mono, "ui-monospace, monospace"),
-    "--rc-text-xs": `${round(base * 0.8125)}px`,
-    "--rc-text-sm": `${round(base * 0.875)}px`,
-    "--rc-text-base": `${round(base)}px`,
+    "--rc-font-display": fontStack(theme.fonts.display, "sans"),
+    "--rc-font-text": fontStack(theme.fonts.text, "sans"),
+    "--rc-font-mono": fontStack(theme.fonts.mono, "mono"),
+    "--rc-text-xs": `${round(ty.base * Math.max(0.6, small - 0.0625))}px`,
+    "--rc-text-sm": `${round(ty.base * small)}px`,
+    "--rc-text-base": `${round(ty.base)}px`,
     "--rc-text-lg": t(1),
     "--rc-text-xl": t(2),
     "--rc-text-2xl": t(3),
     "--rc-text-3xl": t(4),
     "--rc-text-4xl": t(5),
-    "--rc-tracking-heading": `${trackingHeading}em`,
-    "--rc-leading-body": "1.55",
-    "--rc-leading-heading": "1.12",
-    "--rc-radius-sm": `${round(radius * 0.55)}px`,
-    "--rc-radius": `${round(radius)}px`,
-    "--rc-radius-lg": `${round(radius * 1.65)}px`,
-    "--rc-radius-xl": `${round(radius * 2.3)}px`,
-    "--rc-density": `${round(density)}`,
-    "--rc-control-h": `calc(${round(36 * density)}px)`,
-    "--rc-space": `calc(${round(4 * density)}px)`,
-    "--rc-shadow-strength": `${round(shadow)}`,
-    "--rc-shadow-1": `0 1px 2px oklch(0 0 0 / calc(0.14 * var(--rc-shadow-strength)))`,
-    "--rc-shadow-2": `0 4px 12px -2px oklch(0 0 0 / calc(0.18 * var(--rc-shadow-strength))), 0 1px 3px oklch(0 0 0 / calc(0.1 * var(--rc-shadow-strength)))`,
-    "--rc-shadow-3": `0 16px 40px -8px oklch(0 0 0 / calc(0.24 * var(--rc-shadow-strength))), 0 3px 8px oklch(0 0 0 / calc(0.12 * var(--rc-shadow-strength)))`,
+    "--rc-tracking-heading": `${ty.trackingHeading}em`,
+    "--rc-leading-body": `${ty.lineHeightBody ?? 1.55}`,
+    "--rc-leading-heading": `${ty.lineHeightHeading ?? 1.12}`,
+    "--rc-weight-heading": `${ty.weightHeading ?? 600}`,
+    "--rc-weight-ui": `${ty.weightUI ?? 550}`,
+    "--rc-radius-sm": `${round(s.radius * clamp(1 - 0.45 * spread, 0.1, 1))}px`,
+    "--rc-radius": `${round(s.radius)}px`,
+    "--rc-radius-lg": `${round(s.radius * (1 + 0.65 * spread))}px`,
+    "--rc-radius-xl": `${round(s.radius * (1 + 1.3 * spread))}px`,
+    "--rc-density": `${round(s.density)}`,
+    "--rc-control-h": `calc(${round((s.controlH ?? 36) * s.density)}px)`,
+    "--rc-space": `calc(${round((s.spaceUnit ?? 4) * s.density)}px)`,
+    "--rc-shadow-strength": `${round(s.shadow)}`,
+    "--rc-shadow-ink": shadowInk,
+    "--rc-shadow-1": `0 1px 2px ${mix(14)}`,
+    "--rc-shadow-2": `0 4px 12px -2px ${mix(18)}, 0 1px 3px ${mix(10)}`,
+    "--rc-shadow-3": `0 16px 40px -8px ${mix(24)}, 0 3px 8px ${mix(12)}`,
+    "--rc-motion": `${round(s.motion ?? 1)}`,
+    "--rc-table-th-transform": comp.tableCase ?? "uppercase",
+    "--rc-badge-radius": comp.badgePill === false ? "var(--rc-radius-sm)" : "999px",
+    "--rc-card-border": comp.cardBorder === false ? "none" : "1px solid var(--rc-line)",
   };
   return vars;
 }
 
-const round = (x) => Math.round(x * 1000) / 1000;
+// "@fontsource-variable/*" registers families as "<Name> Variable"; plain and
+// Google-loaded names match the bare name. Stacking both makes every source work.
+function fontStack(f, generic) {
+  const g = generic === "mono" ? "ui-monospace, monospace" : "ui-sans-serif, system-ui, sans-serif";
+  return `"${f} Variable", "${f}", ${g}`;
+}
 
 // ---------------------------------------------------------------------------
 // CSS emission
@@ -192,13 +253,8 @@ function emitBlock(selector, vars) {
 
 export function buildThemeCSS(theme, scopeSelector = null) {
   const t = structuredClone(theme);
-  const vars = {};
-  Object.assign(vars, rampVars("neutral", t.color.neutral.hue, t.color.neutral.chroma));
-  for (const [key, spec] of Object.entries(t.color.accents)) {
-    Object.assign(vars, rampVars(key, spec.hue, spec.chroma));
-  }
   const sel = scopeSelector ?? `:root[data-rc-theme="${t.name}"]`;
-  const light = { ...vars, ...scaleVars(t), ...semanticVars(t, "light"), "color-scheme": "light" };
+  const light = { ...allRampVars(t), ...scaleVars(t), ...semanticVars(t, "light"), "color-scheme": "light" };
   const darkOnly = { ...semanticVars(t, "dark"), "color-scheme": "dark" };
   return `${emitBlock(sel, light)}\n\n${emitBlock(scopeSelector ? ".dark" : `${sel}.dark`, darkOnly)}\n`;
 }
@@ -206,24 +262,34 @@ export function buildThemeCSS(theme, scopeSelector = null) {
 /** Flat var map for a resolved theme in a mode — used by the studio's live
  *  preview (applied inline on <html>, no stylesheet round-trip). */
 export function themeVars(theme, mode) {
-  const vars = {};
-  Object.assign(vars, rampVars("neutral", theme.color.neutral.hue, theme.color.neutral.chroma));
-  for (const [key, spec] of Object.entries(theme.color.accents)) {
-    Object.assign(vars, rampVars(key, spec.hue, spec.chroma));
-  }
-  Object.assign(vars, scaleVars(theme));
-  Object.assign(vars, semanticVars(theme, mode));
-  return vars;
+  return { ...allRampVars(theme), ...scaleVars(theme), ...semanticVars(theme, mode) };
 }
 
-/** Flat selector->vars map for shadcn registry `css` fields. */
+/** #rrggbb of a ramp step — lets UIs show/seed color pickers from hue+chroma. */
+export function rampHex(hue, chroma, idx, contrast = 1) {
+  const c = toSrgb({
+    mode: "oklch",
+    l: clamp(L_MID + (L_CURVE[idx] - L_MID) * contrast, 0.02, 0.994),
+    c: chroma * C_PROFILE[idx],
+    h: hue,
+  });
+  const hex = (v) => Math.round(clamp(v, 0, 1) * 255).toString(16).padStart(2, "0");
+  return `#${hex(c.r)}${hex(c.g)}${hex(c.b)}`;
+}
+
+/** Reverse map a picked hex onto ramp parameters. chromaScale < 1 for neutrals. */
+export function pickColor(hex, chromaScale = 1) {
+  const c = converter("oklch")(parse(hex));
+  if (!c) return { hue: 0, chroma: 0 };
+  return {
+    hue: Math.round((c.h ?? 0) + 360) % 360,
+    chroma: round((c.c ?? 0) * chromaScale),
+  };
+}
+
+/** Flat selector->vars map for shadcn registry `cssVars` fields. */
 export function themeCSSVars(theme) {
-  const vars = {};
-  Object.assign(vars, rampVars("neutral", theme.color.neutral.hue, theme.color.neutral.chroma));
-  for (const [key, spec] of Object.entries(theme.color.accents)) {
-    Object.assign(vars, key === "neutral" ? {} : rampVars(key, spec.hue, spec.chroma));
-  }
-  Object.assign(vars, scaleVars(theme));
+  const vars = { ...allRampVars(theme), ...scaleVars(theme) };
   return {
     ":root": { ...vars, ...semanticVars(theme, "light"), "color-scheme": "light" },
     ".dark": { ...semanticVars(theme, "dark"), "color-scheme": "dark" },
@@ -252,11 +318,7 @@ function contrast(a, b) {
 }
 
 export function contrastReport(theme) {
-  const raw = {};
-  Object.assign(raw, rampVars("neutral", theme.color.neutral.hue, theme.color.neutral.chroma));
-  for (const [key, spec] of Object.entries(theme.color.accents)) {
-    Object.assign(raw, rampVars(key, spec.hue, spec.chroma));
-  }
+  const raw = allRampVars(theme);
   const rows = [];
   const check = (mode, label, fgRef, bgRef, need) => {
     for (const [k, v] of Object.entries(semanticVars(theme, mode))) if (!(k in raw)) raw[k] = v;

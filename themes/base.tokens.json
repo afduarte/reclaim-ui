@@ -2,14 +2,14 @@
   "name": "base",
   "inherits": null,
   "fonts": {
-    "display": "Source Serif 4",
-    "text": "Sora",
+    "display": "Newsreader",
+    "text": "Public Sans",
     "mono": "JetBrains Mono"
   },
   "color": {
     "neutral": {
-      "hue": 341,
-      "chroma": 0
+      "hue": 326,
+      "chroma": 0.018
     },
     "accents": {
       "brand": {
@@ -17,7 +17,7 @@
         "chroma": 0.158
       },
       "success": {
-        "hue": 359,
+        "hue": 157,
         "chroma": 0.13
       },
       "warn": {
@@ -36,7 +36,7 @@
     "shadow": 0.1
   },
   "type": {
-    "base": 14,
+    "base": 15,
     "ratio": 1.167,
     "trackingHeading": -0.015
   }

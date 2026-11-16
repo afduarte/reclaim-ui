@@ -62,7 +62,7 @@
     font-family: var(--rc-font-display);
     letter-spacing: var(--rc-tracking-heading);
     line-height: var(--rc-leading-heading);
-    font-weight: 600;
+    font-weight: var(--rc-weight-heading, 600);
   }
   a:not([class]) {
     color: var(--rc-link, var(--rc-brand));
@@ -94,10 +94,10 @@
   color: var(--_fg);
   font-family: var(--rc-font-text);
   font-size: var(--rc-text-sm);
-  font-weight: 550;
+  font-weight: var(--rc-weight-ui, 550);
   line-height: 1;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease;
+  transition: background calc(120ms * var(--rc-motion, 1)) ease, border-color calc(120ms * var(--rc-motion, 1)) ease, color calc(120ms * var(--rc-motion, 1)) ease, transform calc(80ms * var(--rc-motion, 1)) ease;
 }
 .rc-btn:active { transform: translateY(1px); }
 .rc-btn:hover:not(:disabled) { background: var(--_bg-hover); }
@@ -145,7 +145,7 @@
   color: var(--rc-ink);
   font: inherit;
   font-size: var(--rc-text-sm);
-  transition: border-color 120ms ease, outline-color 120ms ease;
+  transition: border-color calc(120ms * var(--rc-motion, 1)) ease, outline-color calc(120ms * var(--rc-motion, 1)) ease;
 }
 .rc-input::placeholder { color: var(--rc-ink-faint); }
 .rc-input:hover:not(:disabled) { border-color: var(--rc-line-strong); }
@@ -164,7 +164,7 @@
 .rc-field__label {
   display: block;
   font-size: var(--rc-text-sm);
-  font-weight: 550;
+  font-weight: var(--rc-weight-ui, 550);
   color: var(--rc-ink);
   margin-bottom: calc(var(--rc-space) * 1.5);
 }
@@ -173,7 +173,7 @@
 
 .rc-card {
   background: var(--rc-surface);
-  border: 1px solid var(--rc-line);
+  border: var(--rc-card-border, 1px solid var(--rc-line));
   border-radius: var(--rc-radius-lg);
   box-shadow: var(--rc-shadow-1);
 }
@@ -184,9 +184,9 @@
   gap: calc(var(--rc-space) * 1.5);
   height: calc(var(--rc-control-h) * 0.62);
   padding-inline: calc(var(--rc-space) * 2.5);
-  border-radius: 999px;
+  border-radius: var(--rc-badge-radius, 999px);
   font-size: var(--rc-text-xs);
-  font-weight: 550;
+  font-weight: var(--rc-weight-ui, 550);
   letter-spacing: 0.01em;
   background: var(--rc-a-soft, var(--rc-brand-soft));
   color: var(--rc-a-soft-ink, var(--rc-brand-soft-ink));
@@ -205,11 +205,11 @@
 .rc-table { width: 100%; border-collapse: collapse; font-size: var(--rc-text-sm); }
 .rc-table th {
   text-align: left;
-  font-weight: 550;
+  font-weight: var(--rc-weight-ui, 550);
   color: var(--rc-ink-muted);
   font-size: var(--rc-text-xs);
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: var(--rc-table-th-transform, uppercase);
   padding: calc(var(--rc-space) * 2.5) calc(var(--rc-space) * 3);
   border-bottom: 1px solid var(--rc-line);
 }

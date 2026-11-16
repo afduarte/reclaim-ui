@@ -8,6 +8,12 @@ const emit = defineEmits(["fork"]);
 defineProps({ forking: Boolean });
 const forkName = defineModel("forkName", { type: String, default: "" });
 
+const adv = ref(false); // advanced token controls
+const tintPaper = computed({
+  get: () => !!t.color.canvas,
+  set: (on) => { t.color.canvas = on ? { hue: t.color.neutral.hue, chroma: 0.02 } : null; },
+});
+
 const CURATED_FONTS = Object.keys(FONT_LOADERS);
 const fontOptions = CURATED_FONTS.map((f) => ({ value: f, label: f }));
 
@@ -181,6 +187,12 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
         <p class="min-h-[1.25rem] text-xs font-mono mt-1" style="color: var(--rc-success)">{{ state.notice }}</p>
       </div>
 
+      <!-- advanced switch -->
+      <label class="flex items-center gap-2 text-xs font-mono cursor-pointer select-none" style="color: var(--rc-ink-muted)">
+        <input type="checkbox" v-model="adv" class="rc-check-native" />
+        Advanced token controls
+      </label>
+
       <!-- Type -->
       <section class="space-y-3">
         <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Type</h4>
@@ -204,6 +216,20 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
             :dirty="isD('type.base')" @revert="revert('type.base')" />
           <Slider label="ratio" v-model="t.type.ratio" :min="1.067" :max="1.422" :step="0.001"
             :dirty="isD('type.ratio')" @revert="revert('type.ratio')" />
+          <Slider label="heading tracking" v-model="t.type.trackingHeading" :min="-0.04" :max="0.02" :step="0.001"
+            :dirty="isD('type.trackingHeading')" @revert="revert('type.trackingHeading')" />
+          <template v-if="adv">
+            <Slider label="leading · body" v-model="t.type.lineHeightBody" :min="1.3" :max="1.9" :step="0.01"
+              :dirty="isD('type.lineHeightBody')" @revert="revert('type.lineHeightBody')" />
+            <Slider label="leading · heading" v-model="t.type.lineHeightHeading" :min="1" :max="1.3" :step="0.01"
+              :dirty="isD('type.lineHeightHeading')" @revert="revert('type.lineHeightHeading')" />
+            <Slider label="weight · heading" v-model="t.type.weightHeading" :min="500" :max="750" :step="50"
+              :dirty="isD('type.weightHeading')" @revert="revert('type.weightHeading')" />
+            <Slider label="weight · ui" v-model="t.type.weightUI" :min="450" :max="650" :step="50"
+              :dirty="isD('type.weightUI')" @revert="revert('type.weightUI')" />
+            <Slider label="small scale" v-model="t.type.smallScale" :min="0.75" :max="0.95" :step="0.005"
+              :dirty="isD('type.smallScale')" @revert="revert('type.smallScale')" />
+          </template>
         </div>
       </section>
 
@@ -220,6 +246,33 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           :dirty="isD('color.neutral.hue')" @revert="revert('color.neutral.hue')" />
         <Slider label="chroma" v-model="t.color.neutral.chroma" :min="0" :max="0.035" :step="0.001"
           :dirty="isD('color.neutral.chroma')" @revert="revert('color.neutral.chroma')" />
+        <Slider v-if="adv" label="contrast curve" v-model="t.ramps.contrast" :min="0.7" :max="1.3" :step="0.01"
+          :dirty="isD('ramps.contrast')" @revert="revert('ramps.contrast')" />
+      </section>
+
+      <!-- Surfaces (advanced) -->
+      <section v-if="adv" class="space-y-1.5">
+        <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Surfaces</h4>
+        <label class="flex items-center gap-2 text-xs cursor-pointer select-none" style="color: var(--rc-ink-muted)">
+          <input type="checkbox" v-model="tintPaper" class="rc-check-native" />
+          tint paper independently from grays
+        </label>
+        <template v-if="t.color.canvas">
+          <Slider label="paper hue" suffix="°" v-model="t.color.canvas.hue" :min="0" :max="360"
+            :dirty="isD('color.canvas.hue')" @revert="revert('color.canvas.hue')" />
+          <Slider label="paper chroma" v-model="t.color.canvas.chroma" :min="0" :max="0.05" :step="0.002"
+            :dirty="isD('color.canvas.chroma')" @revert="revert('color.canvas.chroma')" />
+        </template>
+        <Slider label="surface lift" v-model="t.mapping.surfaceLift" :min="0" :max="4" :step="1"
+          :dirty="isD('mapping.surfaceLift')" @revert="revert('mapping.surfaceLift')" />
+        <Slider label="border step" v-model="t.mapping.borderStep" :min="2" :max="5" :step="1"
+          :dirty="isD('mapping.borderStep')" @revert="revert('mapping.borderStep')" />
+        <Select label="ink step" size="sm"
+          :model-value="String(t.mapping.inkStep)"
+          :dirty="isD('mapping.inkStep')"
+          :options="[{ value: '800', label: '800 · soft' }, { value: '900', label: '900' }, { value: '950', label: '950 · harsh' }]"
+          @update:model-value="t.mapping.inkStep = Number($event)"
+          @revert="revert('mapping.inkStep')" />
       </section>
 
       <!-- Accents -->
@@ -240,6 +293,19 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
               :dirty="isD(`color.accents.${k}.chroma`)" @revert="revert(`color.accents.${k}.chroma`)" />
           </div>
         </div>
+        <template v-if="adv">
+          <Slider label="solid step" v-model="t.mapping.solidStep" :min="500" :max="800" :step="100"
+            :dirty="isD('mapping.solidStep')" @revert="revert('mapping.solidStep')" />
+          <Slider label="ring alpha" v-model="t.mapping.ringAlpha" :min="0.2" :max="0.8" :step="0.05"
+            :dirty="isD('mapping.ringAlpha')" @revert="revert('mapping.ringAlpha')" />
+        </template>
+      </section>
+
+      <!-- Dark mode (advanced) -->
+      <section v-if="adv" class="space-y-1.5">
+        <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Dark mode</h4>
+        <Slider label="canvas lift" v-model="t.dark.canvasLift" :min="0" :max="3" :step="1"
+          :dirty="isD('dark.canvasLift')" @revert="revert('dark.canvasLift')" />
       </section>
 
       <!-- Geometry -->
@@ -251,6 +317,37 @@ const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
           :dirty="isD('scale.density')" @revert="revert('scale.density')" />
         <Slider label="shadow" v-model="t.scale.shadow" :min="0" :max="1" :step="0.05"
           :dirty="isD('scale.shadow')" @revert="revert('scale.shadow')" />
+        <template v-if="adv">
+          <Slider label="control height" suffix="px" v-model="t.scale.controlH" :min="28" :max="44" :step="1"
+            :dirty="isD('scale.controlH')" @revert="revert('scale.controlH')" />
+          <Slider label="space unit" suffix="px" v-model="t.scale.spaceUnit" :min="3" :max="6" :step="0.5"
+            :dirty="isD('scale.spaceUnit')" @revert="revert('scale.spaceUnit')" />
+          <Slider label="radius spread" v-model="t.scale.radiusSpread" :min="0.5" :max="1.5" :step="0.05"
+            :dirty="isD('scale.radiusSpread')" @revert="revert('scale.radiusSpread')" />
+          <Slider label="shadow hue" suffix="°" v-model="t.scale.shadowHue" :min="0" :max="360"
+            :dirty="isD('scale.shadowHue')" @revert="revert('scale.shadowHue')" />
+          <Slider label="shadow chroma" v-model="t.scale.shadowChroma" :min="0" :max="0.06" :step="0.005"
+            :dirty="isD('scale.shadowChroma')" @revert="revert('scale.shadowChroma')" />
+          <Slider label="motion" v-model="t.scale.motion" :min="0.5" :max="2" :step="0.05"
+            :dirty="isD('scale.motion')" @revert="revert('scale.motion')" />
+        </template>
+      </section>
+
+      <!-- Components (advanced) -->
+      <section v-if="adv" class="space-y-2">
+        <h4 class="text-xs uppercase tracking-widest font-mono" style="color:var(--rc-ink-faint)">Components</h4>
+        <Select label="table headers" size="sm"
+          :model-value="t.components.tableCase"
+          :dirty="isD('components.tableCase')"
+          :options="[{ value: 'uppercase', label: 'Uppercase micro' }, { value: 'none', label: 'Sentence case' }]"
+          @update:model-value="t.components.tableCase = $event"
+          @revert="revert('components.tableCase')" />
+        <label class="flex items-center gap-2 text-xs cursor-pointer select-none" style="color: var(--rc-ink-muted)">
+          <input type="checkbox" v-model="t.components.badgePill" class="rc-check-native" /> pill badges
+        </label>
+        <label class="flex items-center gap-2 text-xs cursor-pointer select-none" style="color: var(--rc-ink-muted)">
+          <input type="checkbox" v-model="t.components.cardBorder" class="rc-check-native" /> card borders
+        </label>
       </section>
 
       <!-- Contrast gate -->

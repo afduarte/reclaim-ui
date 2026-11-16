@@ -5,84 +5,84 @@
     {
       "mode": "light",
       "pair": "ink/canvas",
-      "ratio": 18.455,
+      "ratio": 18.447,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "ink-muted/surface",
-      "ratio": 7.741,
+      "ratio": 7.768,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand/canvas",
-      "ratio": 5.557,
+      "ratio": 5.548,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.557,
+      "ratio": 5.548,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "success/canvas",
-      "ratio": 5.519,
+      "ratio": 4.86,
       "need": 3,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "warn/canvas",
-      "ratio": 4.713,
+      "ratio": 4.704,
       "need": 3,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "danger/canvas",
-      "ratio": 5.623,
+      "ratio": 5.613,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink/canvas",
-      "ratio": 18.455,
+      "ratio": 18.447,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink-muted/surface",
-      "ratio": 7.741,
+      "ratio": 7.768,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand/canvas",
-      "ratio": 5.557,
+      "ratio": 5.548,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.557,
+      "ratio": 5.548,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "danger/canvas",
-      "ratio": 5.623,
+      "ratio": 5.613,
       "need": 4.5,
       "pass": true
     }
