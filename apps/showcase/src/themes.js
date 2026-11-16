@@ -1,6 +1,9 @@
 // Theme store: loads generated CSS, handles theme/mode switching, and is the
 // single write path to the repo (POST -> write-through middleware -> regen).
-import { reactive, computed, watch } from "vue";
+import { reactive, computed, watch, toRaw } from "vue";
+
+/** Proxy-safe deep clone (structuredClone refuses reactive Proxies). */
+export const plain = (v) => (v == null ? v : JSON.parse(JSON.stringify(toRaw(v))));
 
 const cssModules = import.meta.glob("../../../themes/*.rc.css", {
   query: "?raw",
@@ -75,9 +78,11 @@ async function refreshTheme(name) {
 }
 
 /** editor works on the *resolved* theme (inherits flattened) */
-export const workingTheme = computed(
-  () => state.resolved[state.theme] ?? structuredClone(state.rawTokens[state.theme] ?? {}),
-);
+export const workingTheme = computed(() => {
+  const r = state.resolved[state.theme];
+  if (r) return plain(r);
+  return plain(state.rawTokens[state.theme] ?? {});
+});
 
 export const contrastRows = computed(() => state.reports[state.theme] ?? []);
 
@@ -117,8 +122,8 @@ export async function saveTheme(tokens) {
 }
 
 export async function forkTheme(from, newName) {
-  const base = state.resolved[from] ?? state.rawTokens[from];
-  const tokens = { ...structuredClone(base), name: newName, inherits: null };
+  const base = plain(state.resolved[from] ?? state.rawTokens[from] ?? {});
+  const tokens = { ...base, name: newName, inherits: null };
   const ok = await saveTheme(tokens);
   if (ok) await setTheme(newName);
   return ok;

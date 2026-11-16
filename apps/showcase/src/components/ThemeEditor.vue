@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, ref, watch, computed } from "vue";
-import { state, workingTheme, contrastRows, saveTheme } from "../themes.js";
+import { state, workingTheme, contrastRows, saveTheme, plain } from "../themes.js";
 import { DEFAULT_THEME, deepMerge } from "@reclaim/tokens";
 import { Button } from "@reclaim/ui";
 
@@ -19,10 +19,10 @@ const t = reactive(deepMerge(DEFAULT_THEME, workingTheme.value));
 let internalAssign = false;
 const syncFrom = (src) => {
   if (!src) return;
-  const merged = deepMerge(DEFAULT_THEME, src);
+  const merged = deepMerge(DEFAULT_THEME, plain(src));
   if (JSON.stringify(merged) === JSON.stringify(t)) return;
   internalAssign = true;
-  Object.assign(t, structuredClone(merged));
+  Object.assign(t, plain(merged));
 };
 syncFrom(state.resolved[state.theme]);
 watch(() => [state.theme, state.resolved[state.theme]], () => { if (!state.dirty) syncFrom(state.resolved[state.theme] ?? state.rawTokens[state.theme]); });
@@ -32,7 +32,7 @@ function queueSave() {
   state.dirty = true;
   clearTimeout(timer);
   timer = setTimeout(async () => {
-    const ok = await saveTheme(structuredClone(t));
+    const ok = await saveTheme(plain(t));
     if (ok) t.name = state.theme; // save may have re-materialized file
   }, 250);
 }
