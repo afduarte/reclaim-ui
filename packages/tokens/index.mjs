@@ -35,8 +35,8 @@ export function pickColor(hex, chromaScale = 1) {
   const c = converter("oklch")(parse(hex));
   if (!c) return { hue: 0, chroma: 0 };
   return {
-    hue: Math.round((c.hue ?? 0) + 360) % 360,
-    chroma: round((c.chroma ?? 0) * chromaScale),
+    hue: Math.round((c.h ?? 0) + 360) % 360,
+    chroma: round((c.c ?? 0) * chromaScale),
   };
 }
 
@@ -198,6 +198,19 @@ export function buildThemeCSS(theme, scopeSelector = null) {
   const light = { ...vars, ...scaleVars(t), ...semanticVars(t, "light"), "color-scheme": "light" };
   const darkOnly = { ...semanticVars(t, "dark"), "color-scheme": "dark" };
   return `${emitBlock(sel, light)}\n\n${emitBlock(scopeSelector ? ".dark" : `${sel}.dark`, darkOnly)}\n`;
+}
+
+/** Flat var map for a resolved theme in a mode — used by the studio's live
+ *  preview (applied inline on <html>, no stylesheet round-trip). */
+export function themeVars(theme, mode) {
+  const vars = {};
+  Object.assign(vars, rampVars("neutral", theme.color.neutral.hue, theme.color.neutral.chroma));
+  for (const [key, spec] of Object.entries(theme.color.accents)) {
+    Object.assign(vars, rampVars(key, spec.hue, spec.chroma));
+  }
+  Object.assign(vars, scaleVars(theme));
+  Object.assign(vars, semanticVars(theme, mode));
+  return vars;
 }
 
 /** Flat selector->vars map for shadcn registry `css` fields. */

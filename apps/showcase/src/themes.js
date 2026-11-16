@@ -1,6 +1,7 @@
 // Theme store: loads generated CSS, handles theme/mode switching, and is the
 // single write path to the repo (POST -> write-through middleware -> regen).
 import { reactive, computed, watch, toRaw } from "vue";
+import { themeVars } from "@reclaim/tokens";
 
 /** Proxy-safe deep clone (structuredClone refuses reactive Proxies). */
 export const plain = (v) => (v == null ? v : JSON.parse(JSON.stringify(toRaw(v))));
@@ -68,12 +69,33 @@ export const state = reactive({
 
 export const themeNames = computed(() => Object.keys(state.css).sort());
 
-watch(() => [state.theme, state.dark], applyThemeAttrs);
+watch(() => [state.theme, state.dark], () => { clearPreview(); applyThemeAttrs(); });
 
 export function applyThemeAttrs() {
   const el = document.documentElement;
   el.dataset.rcTheme = state.theme;
   el.classList.toggle("dark", state.dark);
+}
+
+// ---- live preview ----------------------------------------------------------
+// While the editor is mid-drag, vars are applied as INLINE styles on <html>:
+// highest specificity, zero stylesheet churn, so nothing reflows under the
+// pointer. The debounced save still writes the file; on completion the preview
+// is cleared and the regenerated theme CSS takes over seamlessly (same values).
+let previewKeys = [];
+export function previewTheme(theme) {
+  const el = document.documentElement;
+  clearPreview();
+  const vars = themeVars(theme, state.dark ? "dark" : "light");
+  for (const [k, v] of Object.entries(vars)) {
+    el.style.setProperty(k, v);
+    previewKeys.push(k);
+  }
+}
+export function clearPreview() {
+  const el = document.documentElement;
+  for (const k of previewKeys) el.style.removeProperty(k);
+  previewKeys = [];
 }
 
 function inject(name, css) {
@@ -122,6 +144,7 @@ export const contrastRows = computed(() => state.reports[state.theme] ?? []);
 
 export async function setTheme(name) {
   state.theme = name;
+  clearPreview();
   applyThemeAttrs();
   await refreshTheme(name);
 }
@@ -151,6 +174,7 @@ export async function saveTheme(tokens) {
     return false;
   }
   await refreshTheme(name);
+  clearPreview(); // regenerated file CSS now matches the preview exactly
   state.rawTokens[name] = tokens;
   state.resolved[name] = tokens;
   state.notice = `Saved themes/${name}.tokens.json`;

@@ -2,22 +2,22 @@
   "name": "base",
   "inherits": null,
   "fonts": {
-    "display": "Bricolage Grotesque",
-    "text": "JetBrains Mono",
+    "display": "Albert Sans",
+    "text": "Source Serif 4",
     "mono": "JetBrains Mono"
   },
   "color": {
     "neutral": {
-      "hue": 264,
-      "chroma": 0.011
+      "hue": 250,
+      "chroma": 0.003
     },
     "accents": {
       "brand": {
-        "hue": 264,
-        "chroma": 0.165
+        "hue": 0,
+        "chroma": 0
       },
       "success": {
-        "hue": 155,
+        "hue": 359,
         "chroma": 0.13
       },
       "warn": {
@@ -31,9 +31,9 @@
     }
   },
   "scale": {
-    "radius": 10,
-    "density": 1,
-    "shadow": 0.65
+    "radius": 2,
+    "density": 0.85,
+    "shadow": 0.1
   },
   "type": {
     "base": 15.5,

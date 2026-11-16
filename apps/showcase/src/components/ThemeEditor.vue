@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, watch, computed } from "vue";
-import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, FONT_LOADERS } from "../themes.js";
+import { state, workingTheme, contrastRows, saveTheme, plain, ensureFonts, previewTheme, FONT_LOADERS } from "../themes.js";
 import { DEFAULT_THEME, deepMerge, rampHex, pickColor } from "@reclaim/tokens";
 import { Button, Input, Select, Slider, ColorPicker, Card, Badge } from "@reclaim/ui";
 
@@ -30,6 +30,8 @@ watch(
 let timer = null;
 function queueSave() {
   state.dirty = true;
+  // instant, reflow-free preview via inline vars on <html>; disk write follows
+  previewTheme(plain(t));
   clearTimeout(timer);
   timer = setTimeout(async () => {
     const ok = await saveTheme(plain(t));
