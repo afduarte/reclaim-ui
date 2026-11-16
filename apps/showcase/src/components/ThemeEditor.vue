@@ -147,6 +147,13 @@ const liveReport = computed(() => {
   try { return contrastReport(plain(t)); } catch { return contrastRows.value; }
 });
 const fails = computed(() => liveReport.value.filter((r) => !r.pass));
+
+// don't let a refresh eat the draft
+watch(anyDirty, (d) => {
+  if (d) window.addEventListener("beforeunload", preventClose);
+  else window.removeEventListener("beforeunload", preventClose);
+});
+function preventClose(e) { e.preventDefault(); e.returnValue = ""; }
 const accentKeys = computed(() => Object.keys(t.color?.accents ?? {}));
 const forkValid = computed(() => /^[a-z0-9-]{2,40}$/.test(forkName.value));
 </script>
