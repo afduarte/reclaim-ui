@@ -27,13 +27,19 @@ export const FONT_LOADERS = {
   "Victor Mono": () => import("@fontsource-variable/victor-mono/index.css"),
 };
 const loadedFonts = new Set();
+/** Load one curated family and resolve when its glyphs are actually usable. */
+export function loadFont(family) {
+  const loader = FONT_LOADERS[family];
+  if (!loader) return Promise.resolve();
+  const ready = loadedFonts.has(family)
+    ? Promise.resolve()
+    : loader().then(() => { loadedFonts.add(family); return document.fonts.ready; });
+  return ready.then(() => document.fonts.load(`16px "${family}"`, "AaBb0123"));
+}
 export function ensureFonts(theme) {
   for (const family of Object.values(theme?.fonts ?? {})) {
-    if (!family || loadedFonts.has(family)) continue;
-    const loader = FONT_LOADERS[family];
-    if (!loader) continue; // external/Google font — loaded via <link> by the editor
-    loadedFonts.add(family);
-    loader().catch(() => loadedFonts.delete(family));
+    if (!family || loadedFonts.has(family) || !FONT_LOADERS[family]) continue;
+    loadFont(family).catch(() => loadedFonts.delete(family));
   }
 }
 

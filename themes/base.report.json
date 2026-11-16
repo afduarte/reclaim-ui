@@ -5,28 +5,28 @@
     {
       "mode": "light",
       "pair": "ink/canvas",
-      "ratio": 18.456,
+      "ratio": 18.455,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "ink-muted/surface",
-      "ratio": 7.739,
+      "ratio": 7.741,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand/canvas",
-      "ratio": 5.166,
+      "ratio": 5.165,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "light",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.166,
+      "ratio": 5.165,
       "need": 4.5,
       "pass": true
     },
@@ -40,7 +40,7 @@
     {
       "mode": "light",
       "pair": "warn/canvas",
-      "ratio": 5.199,
+      "ratio": 4.713,
       "need": 3,
       "pass": true
     },
@@ -54,28 +54,28 @@
     {
       "mode": "dark",
       "pair": "ink/canvas",
-      "ratio": 18.456,
+      "ratio": 18.455,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "ink-muted/surface",
-      "ratio": 7.739,
+      "ratio": 7.741,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand/canvas",
-      "ratio": 5.166,
+      "ratio": 5.165,
       "need": 4.5,
       "pass": true
     },
     {
       "mode": "dark",
       "pair": "brand-solid-ink/brand-solid",
-      "ratio": 5.166,
+      "ratio": 5.165,
       "need": 4.5,
       "pass": true
     },

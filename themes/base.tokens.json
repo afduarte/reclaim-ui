@@ -2,14 +2,14 @@
   "name": "base",
   "inherits": null,
   "fonts": {
-    "display": "Albert Sans",
-    "text": "Source Serif 4",
+    "display": "Source Serif 4",
+    "text": "Sora",
     "mono": "JetBrains Mono"
   },
   "color": {
     "neutral": {
-      "hue": 250,
-      "chroma": 0.003
+      "hue": 160,
+      "chroma": 0
     },
     "accents": {
       "brand": {
@@ -21,7 +21,7 @@
         "chroma": 0.13
       },
       "warn": {
-        "hue": 85,
+        "hue": 178,
         "chroma": 0.15
       },
       "danger": {
