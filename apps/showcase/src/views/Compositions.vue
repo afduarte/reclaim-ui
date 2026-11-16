@@ -47,8 +47,8 @@ const search = ref("");
 
       <Card :padded="false">
         <div class="flex items-center gap-3 px-[calc(var(--rc-space)*4)] py-[calc(var(--rc-space)*3)] border-b border-line">
-          <Input v-model="search" id="svc-search" class="max-w-xs !h-8" placeholder="Search services…" />
-          <Select id="svc-env" :options="[{value:'all',label:'All envs'},{value:'prod',label:'Production'},{value:'stg',label:'Staging'}]" model-value="all" class="!w-36 !h-8" />
+          <div class="w-64"><Input v-model="search" id="svc-search" size="sm" placeholder="Search services…" /></div>
+          <div class="w-36"><Select id="svc-env" :options="[{value:'all',label:'All envs'},{value:'prod',label:'Production'},{value:'stg',label:'Staging'}]" model-value="all" size="sm" /></div>
           <span class="ml-auto text-xs text-ink-faint">5 of 50</span>
           <Button size="sm" variant="outline">Export</Button>
           <Button size="sm">Deploy service</Button>

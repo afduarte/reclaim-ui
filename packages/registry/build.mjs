@@ -156,7 +156,7 @@ const baseItems = themes.flatMap((t) => {
 // ---------------------------------------------------------------------------
 // Components — official-style paths; content inlined in /r/<name>.json
 // ---------------------------------------------------------------------------
-const COMPONENTS = ["Button", "Input", "Select", "Card", "Badge", "Table"];
+const COMPONENTS = ["Button", "Input", "Select", "Slider", "ColorPicker", "Card", "Badge", "Table"];
 const componentItems = COMPONENTS.map((name) => {
   const rel = `registry/reclaim/${name.toLowerCase()}/${name}.vue`;
   const content = readFileSync(path.join(uiDir, "components", `${name}.vue`), "utf8")
