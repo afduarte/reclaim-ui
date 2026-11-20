@@ -31,6 +31,9 @@ const classes = computed(() => [
   `rc-btn--${props.variant}`,
   { "rc-btn--sm": props.size === "sm", "rc-btn--lg": props.size === "lg" },
   { "rc-btn--icon": props.icon },
+  // outline/ghost stay neutral against the brand default; a non-brand accent
+  // opts them into the accent slots (same language as rc-badge--outline).
+  { "rc-btn--accented": props.accent && props.accent !== "brand" },
 ]);
 </script>
 
@@ -42,6 +45,6 @@ const classes = computed(() => [
     :data-loading="loading || undefined"
   >
     <span v-if="loading" aria-hidden="true" class="inline-block size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-    <slot v-else />
+    <slot />
   </button>
 </template>

@@ -129,6 +129,13 @@
 }
 .rc-btn--ghost:hover:not(:disabled) { --_fg: var(--rc-ink); }
 
+/* accent on outline/ghost: neutral against the brand default, so a non-brand
+   accent maps ink+border onto the accent slots (rc-btn--accented). */
+.rc-btn--accented.rc-btn--outline { --_bd: var(--rc-a-border); --_fg: var(--rc-a); }
+.rc-btn--accented.rc-btn--outline:hover:not(:disabled) { --_bg-hover: var(--rc-a-soft); --_fg: var(--rc-a-soft-ink); }
+.rc-btn--accented.rc-btn--ghost { --_fg: var(--rc-a); }
+.rc-btn--accented.rc-btn--ghost:hover:not(:disabled) { --_fg: var(--rc-a-solid); }
+
 /* forced interaction states — for galleries/compare panes where hover can't
    reach two places at once. Mirrors the real pseudo-class output exactly. */
 .rc-btn.is-hover { background: var(--_bg-hover); }

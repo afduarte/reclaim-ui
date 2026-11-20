@@ -81,6 +81,12 @@ const geometryNote = computed(() => {
           <Button :disabled="true">Disabled</Button>
           <Button class="rc-btn--icon">＋</Button>
         </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <Button variant="outline" accent="danger">Outline danger</Button>
+          <Button variant="ghost" accent="danger">Ghost danger</Button>
+          <Button variant="ghost" accent="success">Ghost success</Button>
+          <Button variant="outline">Outline neutral</Button>
+        </div>
         <p class="text-xs text-ink-faint">Tab through the row: focus rings use <code class="font-mono">--rc-ring-soft</code>, never browser defaults.</p>
       </div>
     </Section>
