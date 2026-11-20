@@ -1,6 +1,9 @@
 <script setup>
 import { useId } from "vue";
 
+// autocomplete/required/etc. must land on the real input, not the wrapper div.
+defineOptions({ inheritAttrs: false });
+
 const props = defineProps({
   modelValue: { type: [String, Number], default: "" },
   label: { type: String, default: null },
@@ -25,6 +28,7 @@ const invalid = () => Boolean(props.error);
   <div class="rc-field">
     <label v-if="label" :for="fieldId()" class="rc-field__label">{{ label }}</label>
     <input
+      v-bind="$attrs"
       :id="fieldId()"
       class="rc-input"
       :class="{ 'rc-input--mono': mono }"

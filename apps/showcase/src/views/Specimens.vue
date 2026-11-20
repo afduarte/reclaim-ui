@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
-import { Button, Input, Badge, Select } from "@reclaim/ui";
+import { ToastProvider } from "reka-ui";
+import { Button, Input, Badge, Select, Checkbox, Switch, Alert, Separator, Toast } from "@reclaim/ui";
 import { state } from "../themes.js";
 import Section from "../components/Section.vue";
 import Swatches from "../components/Swatches.vue";
@@ -8,6 +9,8 @@ import Swatches from "../components/Swatches.vue";
 const demoText = ref("editable value");
 const demoInvalid = ref("not-an-email");
 const demoSelect = ref("weekly");
+const demoCheck = ref(false);
+const demoSwitch = ref(false);
 
 const geometryNote = computed(() => {
   const t = state.resolved[state.theme];
@@ -100,6 +103,45 @@ const geometryNote = computed(() => {
             <input type="radio" name="r" class="rc-check-native" checked /> Compact tables
           </label>
         </div>
+      </div>
+    </Section>
+
+    <Section title="Selection" note="checkbox + switch — reka-ui primitives, states via data-*">
+      <div class="flex flex-wrap items-center gap-6">
+        <Checkbox v-model="demoCheck" label="Email me digests" />
+        <Checkbox :model-value="true" label="Checked" />
+        <Checkbox label="Disabled" :disabled="true" />
+        <Switch v-model="demoSwitch" label="Smooth charts" />
+        <Switch :model-value="true" label="On" />
+        <Switch label="Disabled" :disabled="true" />
+      </div>
+    </Section>
+
+    <Section title="Alerts" note="left-edge accent carries status, body stays neutral">
+      <div class="space-y-3 max-w-2xl">
+        <Alert title="Sync started">Queued 12 items; nothing to roll back.</Alert>
+        <Alert accent="success" title="Deploy succeeded">Registry published at 14:23 — no contrast regressions.</Alert>
+        <Alert accent="warn" title="Stale data">3 sensors have not reported for over 6 hours.</Alert>
+        <Alert accent="danger" title="Permission denied">Only admins can delete a location with rooms.</Alert>
+      </div>
+    </Section>
+
+    <Section title="Separators" note="hairlines for rhythm, not borders around regions">
+      <div class="max-w-xl space-y-3">
+        <p class="text-sm">Two sentences apart, a hairline between.</p>
+        <Separator />
+        <div class="flex items-center gap-3 text-sm">
+          Vertical <Separator orientation="vertical" /> keeps columns apart.
+        </div>
+      </div>
+    </Section>
+
+    <Section title="Toasts" note="store-driven; Toaster mounts once at the app root">
+      <div class="space-y-3 max-w-sm">
+        <ToastProvider>
+          <Toast title="Saved" description="Location renamed." accent="success" />
+          <Toast title="Something went wrong" description="Session expired — sign in again." accent="danger" />
+        </ToastProvider>
       </div>
     </Section>
 

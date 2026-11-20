@@ -156,11 +156,14 @@ const baseItems = themes.flatMap((t) => {
 // ---------------------------------------------------------------------------
 // Components — official-style paths; content inlined in /r/<name>.json
 // ---------------------------------------------------------------------------
-const COMPONENTS = ["Button", "Input", "Select", "Slider", "ColorPicker", "Card", "Badge", "Table"];
+const COMPONENTS = ["Button", "Input", "Select", "Slider", "ColorPicker", "Card", "Badge", "Table", "Checkbox", "Switch", "Alert", "Separator"];
+// reka-ui-backed primitives need the primitive library installed in the consumer.
+const REKA_COMPONENTS = new Set(["Checkbox", "Switch", "Separator"]);
 const componentItems = COMPONENTS.map((name) => {
   const rel = `registry/reclaim/${name.toLowerCase()}/${name}.vue`;
   const content = readFileSync(path.join(uiDir, "components", `${name}.vue`), "utf8")
-    .replace('from "../cn"', 'from "@/lib/reclaim/cn.js"');
+    .replace('from "../cn"', 'from "@/lib/reclaim/cn.js"')
+    .replace('from "../toast.js"', 'from "@/lib/reclaim/toast.js"');
   return {
     name: name.toLowerCase(),
     type: "registry:component",
@@ -168,6 +171,7 @@ const componentItems = COMPONENTS.map((name) => {
     description: `${name} styled with Reclaim semantic tokens; pairs with any @reclaim base.`,
     homepage: HOME,
     registryDependencies: [SELF_LIB],
+    ...(REKA_COMPONENTS.has(name) ? { dependencies: ["reka-ui"] } : {}),
     files: [{ type: "registry:component", path: rel, content }],
   };
 });
@@ -185,7 +189,38 @@ const libItem = {
   files: [{ type: "registry:lib", path: "registry/reclaim/cn.js", content: cnContent }],
 };
 
-const items = [...baseItems, libItem, ...componentItems];
+// Toast ships as three files: the store (registry:lib, lands at @/lib/reclaim/
+// toast.js to match the consumers' import), the Toaster mount, and one Toast.
+const rewrite = (text) =>
+  text.replace('from "../cn"', 'from "@/lib/reclaim/cn.js"').replace('from "../toast.js"', 'from "@/lib/reclaim/toast.js"');
+const toastItem = {
+  name: "toast",
+  type: "registry:component",
+  title: "Reclaim Toast",
+  description: "Toast store + <Toaster /> mount, styled with Reclaim semantic tokens (Reka UI).",
+  homepage: HOME,
+  registryDependencies: [SELF_LIB],
+  dependencies: ["reka-ui"],
+  files: [
+    {
+      type: "registry:component",
+      path: "registry/reclaim/toast/Toaster.vue",
+      content: rewrite(readFileSync(path.join(uiDir, "components", "Toaster.vue"), "utf8")),
+    },
+    {
+      type: "registry:component",
+      path: "registry/reclaim/toast/Toast.vue",
+      content: rewrite(readFileSync(path.join(uiDir, "components", "Toast.vue"), "utf8")),
+    },
+    {
+      type: "registry:lib",
+      path: "registry/reclaim/toast.js",
+      content: readFileSync(path.join(uiDir, "toast.js"), "utf8"),
+    },
+  ],
+};
+
+const items = [...baseItems, libItem, ...componentItems, toastItem];
 
 // index (stripped of content, as registries are served) + per-item endpoints
 writeFileSync(
@@ -208,4 +243,4 @@ for (const item of items) {
 for (const w of fontWarnings) console.warn(`⚠ ${w}`);
 console.log(`Registry built → ${out}/registry.json`);
 console.log(`  ${themes.length} theme bases: ${baseItems.map((b) => b.name).join(", ")}`);
-console.log(`  ${COMPONENTS.length} components + reclaim-lib (content inlined)`);
+console.log(`  ${componentItems.length + 1} components + reclaim-lib (content inlined)`);
