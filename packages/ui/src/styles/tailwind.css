@@ -425,3 +425,25 @@
 .rc-toast__close { position: absolute; top: calc(var(--rc-space) * 2); right: calc(var(--rc-space) * 2); color: var(--rc-ink-faint); cursor: pointer; background: none; border: none; padding: 0; }
 .rc-toast__close:hover { color: var(--rc-ink); }
 .rc-toast__close:focus-visible { outline: 2px solid var(--rc-ring-soft); outline-offset: 2px; }
+
+/* ---- calendar / popover / date picker ---- */
+
+.rc-cal { width: calc(var(--rc-control-h) * 8); padding: calc(var(--rc-space) * 2); font-size: var(--rc-text-sm); }
+.rc-cal__header { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--rc-space) * 2); margin-bottom: calc(var(--rc-space) * 2); }
+.rc-cal__heading { font-weight: var(--rc-weight-ui, 550); font-size: var(--rc-text-sm); }
+.rc-cal__grid { width: 100%; border-collapse: collapse; }
+.rc-cal__grid td { text-align: center; padding: 1px; }
+.rc-cal__weekday { font-size: var(--rc-text-xs); color: var(--rc-ink-faint); text-transform: uppercase; letter-spacing: 0.04em; font-weight: var(--rc-weight-ui, 550); padding: calc(var(--rc-space) * 1) 0; }
+.rc-cal__day { display: inline-flex; align-items: center; justify-content: center; width: calc(var(--rc-control-h) * 0.9); height: calc(var(--rc-control-h) * 0.9); border-radius: var(--rc-radius-sm); border: 1px solid transparent; background: transparent; color: var(--rc-ink); font-size: var(--rc-text-sm); cursor: pointer; transition: background calc(120ms * var(--rc-motion, 1)) ease; }
+.rc-cal__day:hover:not([data-disabled]) { background: var(--rc-surface-2); }
+.rc-cal__day:focus-visible { outline: 2px solid var(--rc-ring-soft); outline-offset: 1px; }
+.rc-cal__day[data-today] { border-color: var(--rc-brand-border); }
+.rc-cal__day[data-selected] { background: var(--rc-brand-solid); color: var(--rc-brand-solid-ink); }
+.rc-cal__day[data-outside-view] { color: var(--rc-ink-faint); }
+.rc-cal__day[data-disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.rc-popover { z-index: 50; background: var(--rc-surface); border: 1px solid var(--rc-line); border-radius: var(--rc-radius-lg); box-shadow: var(--rc-shadow-2); padding: calc(var(--rc-space) * 3); outline: none; }
+
+.rc-datepicker__trigger { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--rc-space) * 2); text-align: left; cursor: pointer; }
+.rc-datepicker__placeholder { color: var(--rc-ink-faint); }
+.rc-datepicker__icon { flex: none; color: var(--rc-ink-muted); }

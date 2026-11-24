@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { ToastProvider } from "reka-ui";
-import { Button, Input, Badge, Select, Checkbox, Switch, Alert, Separator, Toast } from "@reclaim/ui";
+import { Button, Input, Badge, Select, Checkbox, Switch, Alert, Separator, Toast, Calendar, DatePicker, Popover } from "@reclaim/ui";
 import { state } from "../themes.js";
 import Section from "../components/Section.vue";
 import Swatches from "../components/Swatches.vue";
@@ -11,6 +11,7 @@ const demoInvalid = ref("not-an-email");
 const demoSelect = ref("weekly");
 const demoCheck = ref(false);
 const demoSwitch = ref(false);
+const demoDate = ref(new Date());
 
 const geometryNote = computed(() => {
   const t = state.resolved[state.theme];
@@ -120,6 +121,19 @@ const geometryNote = computed(() => {
         <Switch v-model="demoSwitch" label="Smooth charts" />
         <Switch :model-value="true" label="On" />
         <Switch label="Disabled" :disabled="true" />
+      </div>
+    </Section>
+
+    <Section title="Dates & popovers" note="reka-ui calendar + popover, rc-* shaped">
+      <div class="flex flex-wrap items-start gap-8">
+        <DatePicker label="Reading date" v-model="demoDate" hint="en-GB display" />
+        <Calendar v-model="demoDate" />
+        <Popover>
+          <template #trigger>
+            <Button variant="outline">Open popover</Button>
+          </template>
+          <p class="text-sm max-w-60">Anchored content, rendered in a portal — the same surface Calendar uses.</p>
+        </Popover>
       </div>
     </Section>
 

@@ -156,14 +156,20 @@ const baseItems = themes.flatMap((t) => {
 // ---------------------------------------------------------------------------
 // Components — official-style paths; content inlined in /r/<name>.json
 // ---------------------------------------------------------------------------
-const COMPONENTS = ["Button", "Input", "Select", "Slider", "ColorPicker", "Card", "Badge", "Table", "Checkbox", "Switch", "Alert", "Separator"];
+const COMPONENTS = ["Button", "Input", "Select", "Slider", "ColorPicker", "Card", "Badge", "Table", "Checkbox", "Switch", "Alert", "Separator", "Calendar", "Popover", "DatePicker"];
 // reka-ui-backed primitives need the primitive library installed in the consumer.
-const REKA_COMPONENTS = new Set(["Checkbox", "Switch", "Separator"]);
+// Calendar + DatePicker also touch @internationalized/date directly (Date <->
+// CalendarDate conversion at the wrapper boundary), so it ships as an explicit
+// dependency rather than leaning on hoisting.
+const REKA_COMPONENTS = new Set(["Checkbox", "Switch", "Separator", "Calendar", "Popover", "DatePicker"]);
+const EXTRA_DEPS = { Calendar: ["@internationalized/date"], DatePicker: ["@internationalized/date"] };
 const componentItems = COMPONENTS.map((name) => {
   const rel = `registry/reclaim/${name.toLowerCase()}/${name}.vue`;
   const content = readFileSync(path.join(uiDir, "components", `${name}.vue`), "utf8")
     .replace('from "../cn"', 'from "@/lib/reclaim/cn.js"')
-    .replace('from "../toast.js"', 'from "@/lib/reclaim/toast.js"');
+    .replace('from "../toast.js"', 'from "@/lib/reclaim/toast.js"')
+    .replace('from "./Calendar.vue"', 'from "../calendar/Calendar.vue"')
+    .replace('from "./Popover.vue"', 'from "../popover/Popover.vue"');
   return {
     name: name.toLowerCase(),
     type: "registry:component",
@@ -171,7 +177,10 @@ const componentItems = COMPONENTS.map((name) => {
     description: `${name} styled with Reclaim semantic tokens; pairs with any @reclaim base.`,
     homepage: HOME,
     registryDependencies: [SELF_LIB],
-    ...(REKA_COMPONENTS.has(name) ? { dependencies: ["reka-ui"] } : {}),
+    ...(REKA_COMPONENTS.has(name) ? { dependencies: ["reka-ui", ...(EXTRA_DEPS[name] ?? [])] } : {}),
+    ...(name === "DatePicker"
+      ? { registryDependencies: [SELF_LIB, `${HOME}/r/calendar.json`, `${HOME}/r/popover.json`] }
+      : {}),
     files: [{ type: "registry:component", path: rel, content }],
   };
 });
